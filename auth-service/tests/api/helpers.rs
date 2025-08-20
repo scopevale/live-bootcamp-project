@@ -47,7 +47,7 @@ impl TestApp {
     // }
     pub async fn post_signup<Body>(&self, body: &Body) -> reqwest::Response
     where
-        Body: serde::Serialize + ?Sized,
+        Body: serde::Serialize,
     {
         self.http_client
             .post(&format!("{}/signup", &self.address))

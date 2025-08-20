@@ -1,14 +1,6 @@
 use crate::helpers::{get_random_email, TestApp};
 
 // Tokio's test macro is used to run the test in an async environment
-// #[tokio::test]
-// async fn signup_returns_auth_ui() {
-//     let app = TestApp::new().await;
-//     let response = app.post_signup("{}").await;
-//
-//     assert_eq!(response.status().as_u16(), 200);
-// }
-
 #[tokio::test]
 async fn should_return_422_if_malformed_input() {
     let app = TestApp::new().await;
@@ -17,17 +9,30 @@ async fn should_return_422_if_malformed_input() {
 
     // TODO: add more malformed input test cases
     let test_cases = [
-        serde_json::json!({
-            // "email": random_email,
+        serde_json::json!({             // no email field
             "password": "password123",
             "requires2FA": true
+        }),
+        serde_json::json!({             // no password field
+            "email": random_email,
+            "requires2FA": false
+        }),
+        serde_json::json!({             // no requires2FA field
+            "email": random_email,
+            "password": "password123",
+        }),
+        serde_json::json!({             // string instead of boolean value in requires2FA field
+            "email": random_email,
+            "password": "password123",
+            "requires2FA": "true"
+        }),
+        serde_json::json!({             // empty JSON object
         }),
     ];
 
     for test_case in test_cases.iter() {
         // call `post_signup`
         let response = app.post_signup(test_case).await;
-        dbg!(&response);
         assert_eq!(
             response.status().as_u16(),
             422,
