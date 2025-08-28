@@ -10,6 +10,7 @@ use tower_http::services::ServeDir;
 use std::error::Error;
 
 pub mod routes;
+pub mod domain;
 use routes::{signup, login, logout, verify_2fa, verify_token};
 
 // This struct encapsulates our application-related logic.
