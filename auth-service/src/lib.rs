@@ -14,6 +14,7 @@ pub mod domain;
 pub mod services;
 
 use routes::{signup, login, logout, verify_2fa, verify_token};
+use domain::AppState;
 
 // This struct encapsulates our application-related logic.
 pub struct Application {
@@ -24,14 +25,15 @@ pub struct Application {
 }
 
 impl Application {
-    pub async fn build(address: &str) -> Result<Self, Box<dyn Error>> {
+    pub async fn build(app_state: AppState, address: &str) -> Result<Self, Box<dyn Error>> {
         let router = Router::new()
         .nest_service("/", ServeDir::new("assets"))
         .route("/signup", post(signup).options(options_handler))
         .route("/login", post(login).options(options_handler))
         .route("/logout", post(logout).options(options_handler))
         .route("/verify-2fa", post(verify_2fa).options(options_handler))
-        .route("/verify-token", post(verify_token).options(options_handler));
+        .route("/verify-token", post(verify_token).options(options_handler))
+        .with_state(app_state);
 
         let listener = tokio::net::TcpListener::bind(address).await?;
         let address = listener.local_addr()?.to_string();

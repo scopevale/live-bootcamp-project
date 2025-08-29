@@ -13,6 +13,7 @@ pub enum UserStoreError {
 // Create a new struct called `HashmapUserStore` containing a `users` field
 // which stores a `HashMap`` of email `String`s mapped to `User` objects.
 // Derive the `Default` trait for `HashmapUserStore`.
+#[derive(Default)]
 pub struct HashmapUserStore {
     users: HashMap<String, User>,
 }
