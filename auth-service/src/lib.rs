@@ -11,6 +11,8 @@ use std::error::Error;
 
 pub mod routes;
 pub mod domain;
+pub mod services;
+
 use routes::{signup, login, logout, verify_2fa, verify_token};
 
 // This struct encapsulates our application-related logic.
