@@ -79,3 +79,6 @@ impl IntoResponse for AuthAPIError {
         (status, body).into_response()
     }
 }
+
+#[cfg(test)]
+pub mod test_helpers;

@@ -1,7 +1,5 @@
 use std::collections::HashMap;
 
-// use axum::async_trait;
-
 use crate::domain::{Email, Password, User, UserStore, UserStoreError};
 
 // Create a new struct called `HashmapUserStore` containing a `users` field
@@ -58,16 +56,18 @@ impl UserStore for HashmapUserStore {
     }
 }
 
-// Add unit tests for your `HashmapUserStore` implementation
+// unit tests for `HashmapUserStore` implementation
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    use crate::test_helpers::get_random_email;
 
     #[tokio::test]
     async fn test_add_user() {
         let mut store = HashmapUserStore::default();
         let user = User {
-            email: Email::parse("me@example.com".to_owned()).unwrap(),
+            email: Email::parse(get_random_email()).unwrap(),
             password: Password::parse("password123".to_owned()).unwrap(),
             requires_2fa: false,
         };
@@ -84,7 +84,7 @@ mod tests {
     #[tokio::test]
     async fn test_get_user() {
         let mut store = HashmapUserStore::default();
-        let email = Email::parse("me@example.com".to_owned()).unwrap();
+        let email = Email::parse(get_random_email()).unwrap();
         let user = User {
             email: email.clone(),
             password: Password::parse("password123".to_owned()).unwrap(),
@@ -97,14 +97,14 @@ mod tests {
         assert_eq!(result, Ok(user.clone()));
 
         // Get non-existing user
-        let result = store.get_user(&Email::parse("none@example.com".to_owned()).unwrap()).await;
+        let result = store.get_user(&Email::parse(get_random_email()).unwrap()).await;
         assert_eq!(result, Err(UserStoreError::UserNotFound));
     }
 
     #[tokio::test]
     async fn test_validate_user() {
         let mut store = HashmapUserStore::default();
-        let email = Email::parse("me@example.com".to_owned()).unwrap();
+        let email = Email::parse(get_random_email()).unwrap();
         let password = Password::parse("password123".to_owned()).unwrap();
         let user = User {
             email: email.clone(),
@@ -127,7 +127,7 @@ mod tests {
         // Validate with non-existing user
         let result = store
             .validate_user(
-                &Email::parse("none@example.com".to_owned()).unwrap(),
+                &Email::parse(get_random_email()).unwrap(),
                 &password
             )
             .await;

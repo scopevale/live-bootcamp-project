@@ -40,12 +40,12 @@ mod tests {
     }
     #[test]
     fn email_missing_at_symbol_is_rejected() {
-        let email = "example.com".to_string();
+        let email = "domain.com".to_string();
         assert!(Email::parse(email).is_err());
     }
     #[test]
     fn email_missing_username_is_rejected() {
-        let email = "@example.com".to_string();
+        let email = "@domain.com".to_string();
         assert!(Email::parse(email).is_err());
     }
     #[test]
