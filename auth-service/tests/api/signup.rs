@@ -1,5 +1,4 @@
 use auth_service::routes::SignupResponse;
-use axum::response::ErrorResponse;
 
 use crate::helpers::{get_random_email, TestApp};
 
