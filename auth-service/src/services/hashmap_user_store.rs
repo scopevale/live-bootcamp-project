@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use crate::domain::{Email, Password, User, UserStore, UserStoreError};
 
 // Create a new struct called `HashmapUserStore` containing a `users` field
-// which stores a `HashMap`` of email `String`s mapped to `User` objects.
+// which stores a `HashMap` of `Email` String's mapped to `User` objects.
 // Derive the `Default` trait for `HashmapUserStore`.
 #[derive(Default)]
 pub struct HashmapUserStore {
@@ -115,7 +115,7 @@ mod tests {
         // add a new user for the tests
         store.users.insert(email.clone(), user.clone());
 
-        // Validate with correct credentials
+        // Validate existing user with correct credentials
         let result = store.validate_user(&email, &password).await;
         assert_eq!(result, Ok(()));
 
@@ -124,7 +124,7 @@ mod tests {
         let result = store.validate_user(&user.email, &incorrect_password).await;
         assert_eq!(result, Err(UserStoreError::InvalidCredentials));
 
-        // Validate with non-existing user
+        // Validate with new, non-existing user
         let result = store
             .validate_user(
                 &Email::parse(get_random_email()).unwrap(),

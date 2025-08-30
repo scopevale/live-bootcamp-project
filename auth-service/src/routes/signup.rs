@@ -8,14 +8,16 @@ pub async fn signup(
     Json(request): Json<SignupRequest>,
 ) -> Result<impl IntoResponse, AuthAPIError> {
 
-    let email = Email::parse(request.email.clone()).map_err(|_| AuthAPIError::InvalidCredentials)?;
-    let password = Password::parse(request.password.clone()).map_err(|_| AuthAPIError::InvalidCredentials)?;
+    let email =
+        Email::parse(request.email.clone()).map_err(|_| AuthAPIError::InvalidCredentials)?;
+    let password =
+        Password::parse(request.password.clone()).map_err(|_| AuthAPIError::InvalidCredentials)?;
 
     // create a new 'User' from the request data
     let user = User::new(
-      email.clone(),
-      password,
-      request.requires_2fa);
+        email.clone(),
+        password,
+        request.requires_2fa);
 
     let mut user_store = state.user_store.write().await;
 
@@ -24,10 +26,8 @@ pub async fn signup(
     }
 
     if user_store.add_user(user).await.is_err() {
-      return Err(AuthAPIError::UnexpectedError);
+        return Err(AuthAPIError::UnexpectedError);
     }
-
-    // user_store.add_user(user).unwrap();
 
     let response = Json(SignupResponse {
       message: format!("User {} created successfully", email),

@@ -33,7 +33,7 @@ impl TestApp {
         let http_client = reqwest::Client::new();
 
         // Create new `TestApp` instance and return it
-        TestApp {
+        Self {
             address,
             http_client,
         }
