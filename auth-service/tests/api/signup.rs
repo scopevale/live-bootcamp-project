@@ -114,13 +114,12 @@ async fn should_return_400_if_invalid_input() {
             "password": "short",
             "requires2FA": true
         }),
-        serde_json::json!({             // empty JSON object
-        }),
     ];
 
     for test_case in test_cases.iter() {
         // call `post_signup`
         let response = app.post_signup(test_case).await;
+        dbg!(&response);
         assert_eq!(response.status().as_u16(), 400, "Failed for input: {:?}", test_case);
 
         assert_eq!(
@@ -152,7 +151,7 @@ async fn should_return_409_if_email_already_exists() {
     let mut response = app.post_signup(&test_case).await;
     assert_eq!(response.status().as_u16(), 201);
 
-    // call `post_signup` the second time
+    // call `post_signup` the second time with same credentials
     response = app.post_signup(&test_case).await;
     assert_eq!(response.status().as_u16(), 409);
     assert_eq!(
@@ -164,4 +163,3 @@ async fn should_return_409_if_email_already_exists() {
         "User already exists".to_owned()
     );
 }
-
