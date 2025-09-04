@@ -9,6 +9,15 @@ impl Password {
             Err("Failed to parse string to a Password type".to_owned())
         }
     }
+
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+
+    pub fn verify(&self, candidate: &str) -> bool {
+        dbg!("Verifying password: {} against {}", &candidate, &self.0);
+        self.0 == candidate
+    }
 }
 
 fn validate_password(s: &str) -> bool {
