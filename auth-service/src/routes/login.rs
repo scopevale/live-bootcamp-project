@@ -1,7 +1,6 @@
 use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
 use serde::{Deserialize, Serialize};
-
-use crate::domain::{AppState, User, AuthAPIError, Email, Password};
+use crate::domain::{AppState, User, UserStoreError, AuthAPIError, Email, Password};
 
 pub async fn login(
     State(state): State<AppState>,
@@ -12,18 +11,29 @@ pub async fn login(
     let password = Password::parse(request.password.clone()).map_err(|_| AuthAPIError::InvalidCredentials)?;
 
     let user_store = state.user_store.read().await;
-    let user: User = user_store.get_user(&email).await.map_err(|_| AuthAPIError::InvalidCredentials)?;
+    let user: User = user_store.get_user(&email).await.map_err(|_| AuthAPIError::IncorrectCredentials)?;
 
     dbg!("User found: {:?}", &user);
 
     if !user.verify_password(&password) {
-        return Err(AuthAPIError::InvalidCredentials);
+        return Err(AuthAPIError::IncorrectCredentials);
     }
+
+    user_store
+        .validate_user(&email, &password)
+        .await
+        .map_err(|e| match e {
+            UserStoreError::UserNotFound        => AuthAPIError::UserNotFound,
+            UserStoreError::IncorrectCredentials => AuthAPIError::IncorrectCredentials,
+            _                                    => AuthAPIError::UnexpectedError,
+        })?; // early-returns Err(AuthAPIError::...)
+
+    dbg!("User validated successfully");
 
     Ok((StatusCode::OK, Json(LoginResponse {
         message: format!("User {} logged in successfully", email),
     })))
-}
+    }
 
 #[derive(Deserialize)]
 pub struct LoginRequest {

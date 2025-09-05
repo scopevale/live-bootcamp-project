@@ -55,8 +55,7 @@ async fn options_handler() -> impl IntoResponse {
     Response::builder()
         .status(200)
         .header(header::ALLOW, "POST, OPTIONS")
-        .body(Body::empty())
-        .unwrap()
+        .body(Body::empty()) .unwrap()
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -68,7 +67,9 @@ impl IntoResponse for AuthAPIError {
     fn into_response(self) -> Response {
         let (status, error_message) = match self {
             AuthAPIError::UserAlreadyExists => (StatusCode::CONFLICT, "User already exists"),
+            AuthAPIError::UserNotFound => (StatusCode::NOT_FOUND, "User not found"),
             AuthAPIError::InvalidCredentials => (StatusCode::BAD_REQUEST, "Invalid credentials"),
+            AuthAPIError::IncorrectCredentials => (StatusCode::UNAUTHORIZED, "Incorrect credentials"),
             AuthAPIError::UnexpectedError => {
                 (StatusCode::INTERNAL_SERVER_ERROR, "Unexpected error")
             }

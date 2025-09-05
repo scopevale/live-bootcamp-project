@@ -1,7 +1,11 @@
+// use crate::domain::UserStoreError;
+
+// #[derive(Debug)]
 pub enum AuthAPIError {
     UserAlreadyExists,
-    // UserNotFound,
+    UserNotFound,
     InvalidCredentials,
+    IncorrectCredentials,
     UnexpectedError,
     // InvalidToken,
     // TokenExpired,
@@ -9,3 +13,15 @@ pub enum AuthAPIError {
     // TwoFactorInvalid,
     // InternalError,
 }
+
+// impl From<UserStoreError> for AuthAPIError {
+//     fn from(error: UserStoreError) -> Self {
+//         match error {
+//             UserStoreError::UserAlreadyExists        => AuthAPIError::UserAlreadyExists,
+//             UserStoreError::UserNotFound             => AuthAPIError::UserNotFound,
+//             UserStoreError::InvalidCredentials       => AuthAPIError::InvalidCredentials,
+//             UserStoreError::IncorrectCredentials     => AuthAPIError::IncorrectCredentials,
+//             UserStoreError::UnexpectedError          => AuthAPIError::UnexpectedError,
+//         }
+//     }
+// }
