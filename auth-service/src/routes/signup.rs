@@ -30,7 +30,7 @@ pub async fn signup(
     }
 
     let response = Json(SignupResponse {
-      message: format!("User {} created successfully", email),
+        message: format!("User {} created successfully", email),
     });
 
     Ok((StatusCode::CREATED, response))

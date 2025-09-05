@@ -59,7 +59,7 @@ async fn options_handler() -> impl IntoResponse {
         .unwrap()
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct ErrorResponse {
     pub error: String,
 }

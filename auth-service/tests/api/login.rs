@@ -1,3 +1,4 @@
+use auth_service::{routes::LoginResponse, ErrorResponse};
 use crate::helpers::{get_random_email, TestApp};
 
 // Tokio's test macro is used to run the test in an async environment
@@ -6,6 +7,8 @@ async fn should_return_422_if_malformed_credentials() {
     let app = TestApp::new().await;
 
     let random_email = get_random_email(); // Call helper method to generate email
+
+    let expected_error_message = "error decoding response body: expected value at line 1 column 1".to_owned();
 
     let test_bodies = [
         serde_json::json!({             // no password field
@@ -24,6 +27,15 @@ async fn should_return_422_if_malformed_credentials() {
             422,
             "Failed for input: {:?}",
             body
+        );
+
+        let req_response = response
+            .json::<ErrorResponse>()
+            .await;
+
+        assert_eq!(
+            req_response.err().unwrap().to_string(),
+            expected_error_message
         );
     }
 }
@@ -45,11 +57,11 @@ async fn should_return_400_if_password_incorrect() {
     assert_eq!(response.status().as_u16(), 201);
 
     let test_bodies = [
-        serde_json::json!({             // bad email field
+        serde_json::json!({             // valid but incorrect password
             "email": random_email,
             "password": "password1234",
         }),
-         serde_json::json!({             // no email field
+        serde_json::json!({             // password too short
             "email": random_email,
             "password": "pass123",
         }),
@@ -57,10 +69,6 @@ async fn should_return_400_if_password_incorrect() {
             "email": random_email,
             "password": "",
         }),
-        // serde_json::json!({             // empty email field
-        //     "email": random_email,
-        //     "password": "password123",
-        // }),
     ];
 
     for body in test_bodies.iter() {
@@ -71,6 +79,14 @@ async fn should_return_400_if_password_incorrect() {
             400,
             "Failed for input: {:?}",
             body
+        );
+       assert_eq!(
+            response
+                .json::<ErrorResponse>()
+                .await
+                .expect("Could not deserialize response body to ErrorResponse")
+                .error,
+            "Invalid credentials".to_owned()
         );
     }
 }
