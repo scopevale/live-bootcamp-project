@@ -61,4 +61,18 @@ mod tests {
     fn valid_passwords_are_parsed_successfully(valid_password: ValidPasswordFixture) -> bool {
         Password::parse(valid_password.0).is_ok()
     }
+
+    #[test]
+    fn incorrect_passwords_are_not_verified() {
+        let password = "correcthorsebatterystaple".to_owned();
+        let password = Password::parse(password).unwrap();
+        assert!(!password.verify("wrongpassword"));
+    }
+
+    #[test]
+    fn correct_passwords_are_verified() {
+        let password = "correcthorsebatterystaple".to_owned();
+        let password = Password::parse(password.clone()).unwrap();
+        assert!(password.verify(&password.0));
+    }
 }

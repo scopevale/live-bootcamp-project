@@ -14,6 +14,7 @@ use serde::{Deserialize, Serialize};
 pub mod routes;
 pub mod domain;
 pub mod services;
+pub mod utils;
 
 use routes::{signup, login, logout, verify_2fa, verify_token};
 use domain::{AppState, AuthAPIError};
