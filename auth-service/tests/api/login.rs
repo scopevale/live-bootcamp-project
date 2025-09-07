@@ -65,6 +65,10 @@ async fn should_return_400_if_invalid_input() {
             "email": random_email,
             "password": "",
         }),
+        serde_json::json!({             // empty password field
+            "email": "bad>user@example.com".to_string(),
+            "password": "password123",
+        }),
     ];
 
     for body in test_bodies.iter() {
@@ -88,7 +92,7 @@ async fn should_return_400_if_invalid_input() {
 }
 
 #[tokio::test]
-async fn should_return_401_if_incorrect_credentials() {
+async fn should_return_401_if_incorrect_password() {
     let app = TestApp::new().await;
     let random_email = get_random_email(); // Call helper method to generate email
 
@@ -107,11 +111,8 @@ async fn should_return_401_if_incorrect_credentials() {
             "email": random_email,
             "password": "password1234",
         }),
-        serde_json::json!({             // valid but incorrect email
-            "email": "me@example.com",
-            "password": "password123",
-        }),
-];
+    ];
+
     for body in test_bodies.iter() {
         let response = app.post_login(&body).await;
         assert_eq!(
@@ -127,6 +128,47 @@ async fn should_return_401_if_incorrect_credentials() {
                 .expect("Could not deserialize response body to ErrorResponse")
                 .error,
             "Incorrect credentials".to_owned()
+        );
+    }
+}
+
+#[tokio::test]
+async fn should_return_404_if_incorrect_username() {
+    let app = TestApp::new().await;
+    let random_email = get_random_email(); // Call helper method to generate email
+
+    // add a new user to test against
+    let user = serde_json::json!({
+        "email": random_email,
+        "password": "password123",
+        "requires2FA": false,
+    });
+
+    let response = app.post_signup(&user).await;
+    assert_eq!(response.status().as_u16(), 201);
+
+    let test_bodies = [
+        serde_json::json!({             // valid but incorrect email
+            "email": "me@example.com",
+            "password": "password123",
+        }),
+    ];
+
+    for body in test_bodies.iter() {
+        let response = app.post_login(&body).await;
+        assert_eq!(
+            response.status().as_u16(),
+            404,
+            "Failed for input: {:?}",
+            body
+        );
+       assert_eq!(
+            response
+                .json::<ErrorResponse>()
+                .await
+                .expect("Could not deserialize response body to ErrorResponse")
+                .error,
+            "User not found".to_owned()
         );
     }
 }
