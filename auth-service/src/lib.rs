@@ -1,13 +1,13 @@
 use axum::{
     body::Body,
-    http::{header, StatusCode},
+    http::{header, Method, StatusCode},
     response::{IntoResponse, Response},
     routing::post,
     serve::Serve,
     Json,
     Router,
 };
-use tower_http::services::ServeDir;
+use tower_http::{cors::CorsLayer, services::ServeDir};
 use std::error::Error;
 use serde::{Deserialize, Serialize};
 
@@ -29,14 +29,33 @@ pub struct Application {
 
 impl Application {
     pub async fn build(app_state: AppState, address: &str) -> Result<Self, Box<dyn Error>> {
+        // Set up CORS layer
+        let allowed_origins = vec![
+            "http://localhost:8000".parse()?,
+            "http://64.227.26.4:8000".parse()?,
+        ];
+
+        let cors = CorsLayer::new()
+            // Allow GET and POST requests from allowed origins
+            .allow_methods([Method::GET, Method::POST])
+            // Allow cookies to be sent
+            .allow_credentials(true)
+            // Allow the specified originsy
+            .allow_origin(allowed_origins);
+
+            // .allow_headers(vec![header::CONTENT_TYPE, header::AUTHORIZATION])
+            // .max_age(std::time::Duration::from_secs(3600));
+
+
         let router = Router::new()
-        .nest_service("/", ServeDir::new("assets"))
-        .route("/signup", post(signup).options(options_handler))
-        .route("/login", post(login).options(options_handler))
-        .route("/logout", post(logout).options(options_handler))
-        .route("/verify-2fa", post(verify_2fa).options(options_handler))
-        .route("/verify-token", post(verify_token).options(options_handler))
-        .with_state(app_state);
+            .nest_service("/", ServeDir::new("assets"))
+            .route("/signup", post(signup).options(options_handler))
+            .route("/login", post(login).options(options_handler))
+            .route("/logout", post(logout).options(options_handler))
+            .route("/verify-2fa", post(verify_2fa).options(options_handler))
+            .route("/verify-token", post(verify_token).options(options_handler))
+            .with_state(app_state)
+            .layer(cors);
 
         let listener = tokio::net::TcpListener::bind(address).await?;
         let address = listener.local_addr()?.to_string();
