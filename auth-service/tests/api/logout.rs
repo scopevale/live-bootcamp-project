@@ -85,10 +85,17 @@ async fn should_return_400_if_logout_called_twice_in_a_row() {
 #[tokio::test]
 async fn should_return_400_if_jwt_cookie_missing() {
     let app = TestApp::new().await;
+
     let response = app.post_logout().await;
 
     let status = response.status().as_u16();
     assert_eq!(status, 400);
+
+    let auth_cookie = response
+        .cookies()
+        .find(|cookie| cookie.name() == JWT_COOKIE_NAME);
+
+    assert!(auth_cookie.is_none());
 
     let body: ErrorResponse = response.json().await.expect("Failed to parse response body");
     assert_eq!(body.error, "Missing token");
