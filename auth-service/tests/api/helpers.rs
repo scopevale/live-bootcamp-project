@@ -5,11 +5,12 @@ use auth_service::{
     domain::AppState, services::hashmap_user_store::HashmapUserStore, Application,
 };
 
-use reqwest;
+use reqwest::cookie::Jar;
 use uuid::Uuid;
 
 pub struct TestApp {
     pub address: String,
+    pub cookie_jar: Arc<Jar>,
     pub http_client: reqwest::Client,
 }
 
@@ -30,11 +31,20 @@ impl TestApp {
         let _ = tokio::spawn(app.run());
 
         // Create a Reqwest http client instance
-        let http_client = reqwest::Client::new();
+        // let http_client = reqwest::Client::new();
+
+        // Create a Reqwest HTTP client with cookie store enabled
+        let cookie_jar = Arc::new(Jar::default());
+        let http_client = reqwest::Client::builder()
+            // .cookie_provider(Arc::clone(&cookie_jar))
+            .cookie_provider(cookie_jar.clone())
+            .build()
+            .expect("Failed to build HTTP client with cookie jar.");
 
         // Create new `TestApp` instance and return it
         Self {
             address,
+            cookie_jar,
             http_client,
         }
     }
