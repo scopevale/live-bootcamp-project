@@ -22,6 +22,7 @@ async fn should_return_422_if_malformed_input() {
 
     for test_case in test_cases {
         let response = app.post_verify_token(&test_case).await;
+        dbg!("Response {:?}", &response);
         assert_eq!(response.status().as_u16(), 422);
     }
 }
