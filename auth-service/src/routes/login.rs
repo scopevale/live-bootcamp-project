@@ -36,29 +36,6 @@ pub async fn login(
     let updated_jar = jar.add(auth_cookie);
 
     Ok((updated_jar, StatusCode::OK.into_response()))
-
-    // if !user.verify_password(&password) {
-    //     return (jar, Err(AuthAPIError::IncorrectCredentials));
-    // }
-    //
-    // user_store
-    //     .validate_user(&email, &password)
-    //     .await
-    //     .map_err(|e| match e {
-    //         UserStoreError::UserNotFound        => AuthAPIError::UserNotFound,
-    //         UserStoreError::IncorrectCredentials => AuthAPIError::IncorrectCredentials,
-    //         _                                    => AuthAPIError::UnexpectedError,
-    //     })?; // early-returns Err(AuthAPIError::...)
-    //
-    // dbg!("User validated successfully");
-    //
-    // let auth_cookie = generate_auth_cookie(&email);
-    //
-    // let updated_jar = jar.add(&auth_cookie);
-    //
-    // (updated_jar, (StatusCode::OK, Json(LoginResponse {
-    //     message: format!("User {} logged in successfully", email),
-    // })))
 }
 
 #[derive(Deserialize)]

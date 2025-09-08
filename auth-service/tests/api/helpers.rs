@@ -49,6 +49,41 @@ impl TestApp {
         }
     }
 
+    // TODO: Fix this function to properly return the user ID from the signup response
+    // pub async fn create_user_and_login(&self) -> (reqwest::cookie::Cookie, Uuid) {
+    //     let email = get_random_email();
+    //     let password = "password123";
+    //     let signup_body = serde_json::json!({
+    //         "email": email,
+    //         "password": password
+    //     });
+    //     let signup_response = self.post_signup(&signup_body).await;
+    //     assert_eq!(signup_response.status().as_u16(), 201);
+    //     let login_body = serde_json::json!({
+    //         "email": email,
+    //         "password": password
+    //     });
+    //     let login_response = self.post_login(&login_body).await;
+    //     assert_eq!(login_response.status().as_u16(), 200);
+    //     // Extract the JWT cookie from the cookie jar
+    //     let url = reqwest::Url::parse(&self.address).expect("Failed to parse URL");
+    //     let cookies = self.cookie_jar.cookies(&url).expect("No cookies found.");
+    //     let cookie_str = cookies.to_str().expect("Failed to convert cookies to string.");
+    //     // Find the JWT cookie in the cookie string
+    //     let jwt_cookie = cookie_str
+    //         .split(';')
+    //         .find(|c| c.trim_start().starts_with("jwt="))
+    //         .expect("JWT cookie not found.")
+    //         .trim_start()
+    //         .to_string();
+    //     // Parse the cookie string into a `reqwest::cookie::Cookie`
+    //     let cookie = reqwest::cookie::Cookie::parse(jwt_cookie)
+    //         .expect("Failed to parse JWT cookie.");
+    //     // For simplicity, we'll return a dummy user ID (UUID)
+    //     let user_id = Uuid::new_v4();
+    //     (cookie, user_id)
+    // }
+
     pub async fn get_root(&self) -> reqwest::Response {
         self.http_client
             .get(&format!("{}/", &self.address))

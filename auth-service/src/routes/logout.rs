@@ -6,7 +6,10 @@ use axum_extra::extract::{cookie, CookieJar};
 
 use crate::{domain::AuthAPIError, utils::{auth::validate_token, constants::JWT_COOKIE_NAME}};
 
-pub async fn logout(jar: CookieJar) -> Result<(CookieJar, impl IntoResponse), AuthAPIError> {
+pub async fn logout(
+    // State(state): State<AppState>,
+    jar: CookieJar
+) -> Result<(CookieJar, impl IntoResponse), AuthAPIError> {
     // Retrieve the JWT cookie from the CookieJar
     // Return AuthAPIError::MissingToken if the cookie is not found
     let cookie = match jar.get(JWT_COOKIE_NAME) {
@@ -20,6 +23,9 @@ pub async fn logout(jar: CookieJar) -> Result<(CookieJar, impl IntoResponse), Au
         Ok(_) => (),
         Err(_) => return Err(AuthAPIError::InvalidToken),
     };
+
+    // Add the token to the blacklist
+    // TODO: Implement token blacklist logic here
 
     // Remove the JWT cookie from the CookieJar
     let jar = jar.remove(cookie::Cookie::from(JWT_COOKIE_NAME));
