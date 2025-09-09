@@ -19,7 +19,7 @@ pub async fn logout(
 
     let token = cookie.value().to_owned();
 
-    let _ = match validate_token(&token).await {
+    match validate_token(&token).await {
         Ok(_) => (),
         Err(_) => return Err(AuthAPIError::InvalidToken),
     };
