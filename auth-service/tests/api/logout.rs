@@ -80,7 +80,7 @@ async fn should_return_400_if_logout_called_twice_in_a_row() {
     assert_eq!(status, 400);
 
     let body: ErrorResponse = response.json().await.expect("Failed to parse response body");
-    assert_eq!(body.error, "Missing token");
+    assert_eq!(body.error, "Missing auth token");
 }
 #[tokio::test]
 async fn should_return_400_if_jwt_cookie_missing() {
@@ -98,7 +98,7 @@ async fn should_return_400_if_jwt_cookie_missing() {
     assert!(auth_cookie.is_none());
 
     let body: ErrorResponse = response.json().await.expect("Failed to parse response body");
-    assert_eq!(body.error, "Missing token");
+    assert_eq!(body.error, "Missing auth token");
 }
 
 #[tokio::test]
@@ -120,5 +120,5 @@ async fn should_return_401_if_invalid_token() {
     assert_eq!(status, 401);
 
     let body: ErrorResponse = response.json().await.expect("Failed to parse response body");
-    assert_eq!(body.error, "Invalid token");
+    assert_eq!(body.error, "Invalid auth token");
 }
