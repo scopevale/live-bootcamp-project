@@ -1,4 +1,4 @@
-use auth_service::{routes::LoginResponse, utils::constants::JWT_COOKIE_NAME, ErrorResponse};
+use auth_service::{utils::constants::JWT_COOKIE_NAME, ErrorResponse};
 use crate::helpers::{get_random_email, TestApp};
 
 // Tokio's test macro is used to run the test in an async environment

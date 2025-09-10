@@ -92,9 +92,9 @@ impl IntoResponse for AuthAPIError {
             AuthAPIError::IncorrectCredentials => (StatusCode::UNAUTHORIZED, "Incorrect credentials"),
             AuthAPIError::InvalidToken => (StatusCode::UNAUTHORIZED, "Invalid auth token"),
             AuthAPIError::MissingToken => (StatusCode::BAD_REQUEST, "Missing auth token"),
-            AuthAPIError::UnexpectedError => {
-                (StatusCode::INTERNAL_SERVER_ERROR, "Unexpected error")
-            }
+            AuthAPIError::UnexpectedError => (StatusCode::INTERNAL_SERVER_ERROR, "Unexpected error"),
+            AuthAPIError::TokenAlreadyBanned => (StatusCode::CONFLICT, "Token already banned"),
+            AuthAPIError::TokenBanFailed => (StatusCode::UNPROCESSABLE_ENTITY, "Failed to ban token"),
         };
         let body = Json(ErrorResponse {
             error: error_message.to_string(),

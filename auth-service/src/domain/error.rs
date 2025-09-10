@@ -7,6 +7,8 @@ pub enum AuthAPIError {
     UnexpectedError,
     MissingToken,
     InvalidToken,
+    TokenAlreadyBanned,
+    TokenBanFailed,
     // TokenExpired,
     // TwoFactorRequired,
     // TwoFactorInvalid,
