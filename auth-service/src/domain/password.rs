@@ -9,6 +9,15 @@ impl Password {
             Err("Failed to parse string to a Password type".to_owned())
         }
     }
+
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+
+    pub fn verify(&self, candidate: &str) -> bool {
+        dbg!("Verifying password: {} against {}", &candidate, &self.0);
+        self.0 == candidate
+    }
 }
 
 fn validate_password(s: &str) -> bool {
@@ -51,5 +60,19 @@ mod tests {
     #[quickcheck_macros::quickcheck]
     fn valid_passwords_are_parsed_successfully(valid_password: ValidPasswordFixture) -> bool {
         Password::parse(valid_password.0).is_ok()
+    }
+
+    #[test]
+    fn incorrect_passwords_are_not_verified() {
+        let password = "correcthorsebatterystaple".to_owned();
+        let password = Password::parse(password).unwrap();
+        assert!(!password.verify("wrongpassword"));
+    }
+
+    #[test]
+    fn correct_passwords_are_verified() {
+        let password = "correcthorsebatterystaple".to_owned();
+        let password = Password::parse(password.clone()).unwrap();
+        assert!(password.verify(&password.0));
     }
 }

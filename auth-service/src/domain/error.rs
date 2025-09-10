@@ -1,9 +1,14 @@
+#[derive(Debug)]
 pub enum AuthAPIError {
     UserAlreadyExists,
-    // UserNotFound,
+    UserNotFound,
     InvalidCredentials,
+    IncorrectCredentials,
     UnexpectedError,
-    // InvalidToken,
+    MissingToken,
+    InvalidToken,
+    TokenAlreadyBanned,
+    TokenBanFailed,
     // TokenExpired,
     // TwoFactorRequired,
     // TwoFactorInvalid,

@@ -17,4 +17,8 @@ impl User {
           requires_2fa,
       }
     }
+
+    pub(crate) fn verify_password(&self, password: &Password) -> bool {
+        self.password.verify(password.as_str())
+    }
 }

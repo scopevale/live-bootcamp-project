@@ -48,7 +48,7 @@ impl UserStore for HashmapUserStore {
                   if user.password.eq(password) {
                       Ok(())
                   } else {
-                      Err(UserStoreError::InvalidCredentials)
+                      Err(UserStoreError::IncorrectCredentials)
                   }
               }
               None => Err(UserStoreError::UserNotFound),
@@ -122,7 +122,7 @@ mod tests {
         // Validate with incorrect password
         let incorrect_password = Password::parse("wrongpassword".to_owned()).unwrap();
         let result = store.validate_user(&user.email, &incorrect_password).await;
-        assert_eq!(result, Err(UserStoreError::InvalidCredentials));
+        assert_eq!(result, Err(UserStoreError::IncorrectCredentials));
 
         // Validate with new, non-existing user
         let result = store
