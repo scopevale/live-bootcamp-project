@@ -6,10 +6,10 @@ use serde::Deserialize;
 use crate::{domain::{AppState, AuthAPIError}, utils::auth::validate_token};
 
 pub async fn verify_token(
-    State(_state): State<AppState>,
+    State(state): State<AppState>,
     Json(request): Json<VerifyTokenRequest>,
 ) -> Result<StatusCode, AuthAPIError> {
-    match validate_token(&request.token).await {
+    match validate_token(&request.token, state.banned_token_store.clone()).await {
         Ok(_) => Ok(StatusCode::OK),
         Err(_) => Err(AuthAPIError::InvalidToken),
     }
