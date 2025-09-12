@@ -208,33 +208,3 @@ async fn should_return_200_if_valid_credentials_and_2fa_disabled() {
 async fn should_return_206_if_valid_credentials_and_2fa_enabled() {
     todo!()
 }
-
-
-// #[tokio::test]
-// async fn should_login_successfully_with_valid_credentials() {
-//     let app = TestApp::new().await;
-//     let random_email = get_random_email(); // Call helper method to generate email
-//     // add a new user to test against
-//     let user = serde_json::json!({
-//         "email": random_email,
-//         "password": "password123",
-//         "requires2FA": false,
-//     });
-//     let response = app.post_signup(&user).await;
-//     assert_eq!(response.status().as_u16(), 201);
-//     // now try to login with the same credentials
-//     let login_request = serde_json::json!({
-//         "email": random_email,
-//         "password": "password123",
-//     });
-//     let response = app.post_login(&login_request).await;
-//     assert_eq!(response.status().as_u16(), 200);
-//     let expected_response = LoginResponse {
-//         message: format!("User {} logged in successfully", random_email),
-//     };
-//     let response_body = response
-//         .json::<LoginResponse>()
-//         .await
-//         .expect("Could not deserialize response body to LoginResponse");
-//     assert_eq!(response_body, expected_response);
-// }
