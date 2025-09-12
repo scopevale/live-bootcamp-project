@@ -203,6 +203,13 @@ async fn should_return_200_if_valid_credentials_and_2fa_disabled() {
 
     assert!(!auth_cookie.value().is_empty());
 }
+
+#[tokio::test]
+async fn should_return_206_if_valid_credentials_and_2fa_enabled() {
+    todo!()
+}
+
+
 // #[tokio::test]
 // async fn should_login_successfully_with_valid_credentials() {
 //     let app = TestApp::new().await;
