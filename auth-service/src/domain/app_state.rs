@@ -7,7 +7,7 @@ use crate::domain::{BannedTokenStore, UserStore};
 pub type UserStoreType = Arc<RwLock<dyn UserStore + Send + Sync>>;
 pub type BannedTokenStoreType = Arc<RwLock<dyn BannedTokenStore + Send + Sync>>;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct AppState {
     pub user_store: UserStoreType,
     pub banned_token_store: BannedTokenStoreType,
@@ -15,6 +15,9 @@ pub struct AppState {
 
 impl AppState {
     pub fn new(user_store: UserStoreType, banned_token_store: BannedTokenStoreType) -> Self {
-        Self { user_store, banned_token_store }
+        Self {
+            user_store,
+            banned_token_store,
+        }
     }
 }

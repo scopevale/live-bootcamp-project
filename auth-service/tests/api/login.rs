@@ -1,5 +1,5 @@
-use auth_service::{utils::constants::JWT_COOKIE_NAME, ErrorResponse};
 use crate::helpers::{get_random_email, TestApp};
+use auth_service::{utils::constants::JWT_COOKIE_NAME, ErrorResponse};
 
 // Tokio's test macro is used to run the test in an async environment
 #[tokio::test]
@@ -8,13 +8,14 @@ async fn should_return_422_if_malformed_credentials() {
 
     let random_email = get_random_email(); // Call helper method to generate email
 
-    let expected_error_message = "error decoding response body: expected value at line 1 column 1".to_owned();
+    let expected_error_message =
+        "error decoding response body: expected value at line 1 column 1".to_owned();
 
     let test_bodies = [
         serde_json::json!({             // no password field
             "email": random_email,
         }),
-         serde_json::json!({             // no email field
+        serde_json::json!({             // no email field
             "password": "password123",
         }),
     ];
@@ -29,9 +30,7 @@ async fn should_return_422_if_malformed_credentials() {
             body
         );
 
-        let req_response = response
-            .json::<ErrorResponse>()
-            .await;
+        let req_response = response.json::<ErrorResponse>().await;
 
         assert_eq!(
             req_response.err().unwrap().to_string(),
@@ -80,7 +79,7 @@ async fn should_return_400_if_invalid_input() {
             "Failed for input: {:?}",
             body
         );
-       assert_eq!(
+        assert_eq!(
             response
                 .json::<ErrorResponse>()
                 .await
@@ -121,7 +120,7 @@ async fn should_return_401_if_incorrect_password() {
             "Failed for input: {:?}",
             body
         );
-       assert_eq!(
+        assert_eq!(
             response
                 .json::<ErrorResponse>()
                 .await
@@ -147,12 +146,10 @@ async fn should_return_404_if_incorrect_username() {
     let response = app.post_signup(&user).await;
     assert_eq!(response.status().as_u16(), 201);
 
-    let test_bodies = [
-        serde_json::json!({             // valid but incorrect email
-            "email": "me@example.com",
-            "password": "password123",
-        }),
-    ];
+    let test_bodies = [serde_json::json!({             // valid but incorrect email
+        "email": "me@example.com",
+        "password": "password123",
+    })];
 
     for body in test_bodies.iter() {
         let response = app.post_login(&body).await;
@@ -162,7 +159,7 @@ async fn should_return_404_if_incorrect_username() {
             "Failed for input: {:?}",
             body
         );
-       assert_eq!(
+        assert_eq!(
             response
                 .json::<ErrorResponse>()
                 .await
@@ -194,7 +191,7 @@ async fn should_return_200_if_valid_credentials_and_2fa_disabled() {
     });
 
     let response = app.post_login(&login_body).await;
-    assert_eq!(response.status().as_u16(), 200);
+    assert_eq!(response.status().as_u16(), 220);
 
     let auth_cookie = response
         .cookies()

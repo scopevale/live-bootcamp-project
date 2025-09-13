@@ -4,7 +4,8 @@ use tokio::sync::RwLock;
 use auth_service::{
     domain::{AppState, BannedTokenStoreType},
     services::{hashmap_user_store::HashmapUserStore, HashsetBannedTokenStore},
-    utils::constants::test, Application
+    utils::constants::test,
+    Application,
 };
 
 use reqwest::cookie::Jar;
@@ -23,6 +24,8 @@ impl TestApp {
         let banned_token_store = Arc::new(RwLock::new(HashsetBannedTokenStore::default()));
 
         let app_state = AppState::new(user_store, banned_token_store.clone());
+
+        println!("App state: {:?}", &app_state);
 
         let app = Application::build(app_state, test::APP_ADDRESS)
             .await
@@ -109,7 +112,7 @@ impl TestApp {
 
     pub async fn post_login<Body>(&self, body: &Body) -> reqwest::Response
     where
-        Body: serde::Serialize
+        Body: serde::Serialize,
     {
         self.http_client
             .post(&format!("{}/login", &self.address))
