@@ -30,7 +30,7 @@ pub enum BannedTokenStoreError {
 
 // This trait represents the interface all concrete 2FA code stores should implement
 #[async_trait::async_trait]
-pub trait TwoFACodeStore {
+pub trait TwoFACodeStore: std::fmt::Debug {
     async fn add_code(
         &mut self,
         email: Email,
