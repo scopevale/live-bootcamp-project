@@ -232,15 +232,17 @@ async fn should_return_206_if_valid_credentials_and_2fa_enabled() {
         .json::<TwoFactorAuthResponse>()
         .await
         .expect("Could not deserialize response body to TwoFactorAuthResponse");
+
     assert!(!json_body.login_attempt_id.is_empty());
-    dbg!(json_body.login_attempt_id);
-    dbg!(app);
-    assert_eq!(json_body.message, "2FAxrequired".to_owned());
+    assert_eq!(json_body.message, "2FA required".to_owned());
 
     // assert that 'json_body.login_attempt_id' is stored in the TwoFA code store
-    // let stored_code = app
-    //     .two_fa_code_store
-    //     .get_code(&Email::parse(random_email).unwrap())
-    //     .await
-    //     .expect("Could not get 2FA code from store");
+    let two_fa_code_store = app.two_fa_code_store.read().await;
+
+    let code_tuple = two_fa_code_store
+        .get_code(&Email::parse(random_email).unwrap())
+        .await
+        .expect("Failed to get 2FA code");
+
+    assert_eq!(code_tuple.0.as_ref(), json_body.login_attempt_id);
 }

@@ -3,10 +3,7 @@ use tokio::sync::RwLock;
 
 use auth_service::{
     domain::{AppState, BannedTokenStoreType, TwoFACodeStoreType},
-    services::{
-        hashmap_two_fa_code_store::HashmapTwoFACodeStore, hashmap_user_store::HashmapUserStore,
-        HashsetBannedTokenStore,
-    },
+    services::{HashmapTwoFACodeStore, HashmapUserStore, HashsetBannedTokenStore, MockEmailClient},
     utils::constants::test,
     Application,
 };
@@ -29,10 +26,13 @@ impl TestApp {
         let banned_token_store = Arc::new(RwLock::new(HashsetBannedTokenStore::default()));
         let two_fa_code_store = Arc::new(RwLock::new(HashmapTwoFACodeStore::default()));
 
+        let email_client = Arc::new(MockEmailClient);
+
         let app_state = AppState::new(
             user_store,
             banned_token_store.clone(),
             two_fa_code_store.clone(),
+            email_client,
         );
 
         println!("App state: {:?}", &app_state);
@@ -51,7 +51,6 @@ impl TestApp {
         // Create a Reqwest HTTP client with cookie store enabled
         let cookie_jar = Arc::new(Jar::default());
         let http_client = reqwest::Client::builder()
-            // .cookie_provider(Arc::clone(&cookie_jar))
             .cookie_provider(cookie_jar.clone())
             .build()
             .expect("Failed to build HTTP client with cookie jar.");
@@ -141,9 +140,13 @@ impl TestApp {
             .expect("Failed to execute request.")
     }
 
-    pub async fn post_verify_2fa(&self) -> reqwest::Response {
+    pub async fn post_verify_2fa<Body>(&self, body: &Body) -> reqwest::Response
+    where
+        Body: serde::Serialize,
+    {
         self.http_client
             .post(&format!("{}/verify-2fa", &self.address))
+            .json(body)
             .send()
             .await
             .expect("Failed to execute request.")
