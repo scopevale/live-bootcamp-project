@@ -14,6 +14,7 @@ use auth_service::{
 use reqwest::cookie::Jar;
 use uuid::Uuid;
 
+#[derive(Debug, Clone)]
 pub struct TestApp {
     pub address: String,
     pub cookie_jar: Arc<Jar>,
