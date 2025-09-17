@@ -8,6 +8,65 @@ use auth_service::{
 use crate::helpers::{get_random_email, TestApp};
 
 #[tokio::test]
+async fn should_return_200_if_correct_2fa_code() {
+    let app = TestApp::new().await;
+    let random_email = get_random_email();
+
+    let signup_body = serde_json::json!({
+        "email": random_email,
+        "password": "password123",
+        "requires2FA": true,
+    });
+
+    let response = app.post_signup(&signup_body).await;
+    assert_eq!(response.status().as_u16(), 201);
+
+    let login_body = serde_json::json!({
+        "email": random_email,
+        "password": "password123",
+    });
+
+    let response = app.post_login(&login_body).await;
+    assert_eq!(response.status().as_u16(), 206);
+
+    let response_body = response
+        .json::<TwoFactorAuthResponse>()
+        .await
+        .expect("Could not deserialize response body to TwoFactorAuthResponse");
+
+    assert_eq!(response_body.message, "2FA required".to_owned());
+    assert!(!response_body.login_attempt_id.is_empty());
+
+    let login_attempt_id = response_body.login_attempt_id;
+
+    let code_tuple = app
+        .two_fa_code_store
+        .read()
+        .await
+        .get_code(&Email::parse(random_email.clone()).unwrap())
+        .await
+        .unwrap();
+
+    let two_fa_code = code_tuple.1.as_ref();
+
+    let request_body = serde_json::json!({
+        "email": random_email,
+        "loginAttemptId": login_attempt_id,
+        "2FACode": two_fa_code,
+    });
+
+    let response = app.post_verify_2fa(&request_body).await;
+    assert_eq!(response.status().as_u16(), 200);
+
+    let auth_cookie = response
+        .cookies()
+        .find(|cookie| cookie.name() == JWT_COOKIE_NAME)
+        .expect("No auth cookie found");
+
+    assert!(!auth_cookie.value().is_empty());
+}
+
+#[tokio::test]
 async fn should_return_400_if_invalid_input() {
     let app = TestApp::new().await;
     let random_email = get_random_email(); // Call helper method to generate email
@@ -32,6 +91,7 @@ async fn should_return_400_if_invalid_input() {
             "2FACode": "123", // invalid 2FA code format
         }),
     ];
+
     for body in test_bodies.iter() {
         // call `post_verify_2fa`
         let response = app.post_verify_2fa(&body).await;
@@ -51,38 +111,6 @@ async fn should_return_400_if_invalid_input() {
         );
     }
 }
-
-// #[tokio::test]
-// async fn should_return_401_if_incorrect_credentials() {
-//     let app = TestApp::new().await;
-//     let random_email = get_random_email(); // Call helper method to generate email
-//     let login_attempt_id = LoginAttemptId::default().as_ref().to_owned();
-//     let two_fa_code = TwoFACode::default().as_ref().to_owned();
-//     let expected_error_message = "Incorrect credentials".to_owned();
-//     let test_bodies = [serde_json::json!({
-//         "email": random_email,
-//         "loginAttemptId": login_attempt_id,
-//         "2FACode": two_fa_code,
-//     })];
-//     for body in test_bodies.iter() {
-//         // call `post_verify_2fa`
-//         let response = app.post_verify_2fa(&body).await;
-//         assert_eq!(
-//             response.status().as_u16(),
-//             401,
-//             "Failed for input: {:?}",
-//             body
-//         );
-//         assert_eq!(
-//             response
-//                 .json::<ErrorResponse>()
-//                 .await
-//                 .expect("Could not deserialize response body to ErrorResponse")
-//                 .error,
-//             expected_error_message
-//         );
-//     }
-// }
 
 #[tokio::test]
 async fn should_return_401_if_incorrect_credentials() {
@@ -181,82 +209,6 @@ async fn should_return_401_if_incorrect_credentials() {
         );
     }
 }
-
-// #[tokio::test]
-// async fn should_return_401_if_old_code() {
-//     // Call login twice. Then, attempt to call verify-fa with the 2FA code from the first login requet. This should fail.
-//     let app = TestApp::new().await;
-//     let random_email = get_random_email(); // Call helper method to generate email
-//     let password = "password123";
-//     let user = serde_json::json!({
-//         "email": random_email,
-//         "password": password,
-//         "requires2FA": true,
-//     });
-//
-//     let response = app.post_signup(&user).await;
-//     assert_eq!(response.status().as_u16(), 201);
-//
-//     let login_body = serde_json::json!({
-//         "email": random_email,
-//         "password": password,
-//     });
-//
-//     let response = app.post_login(&login_body).await;
-//     assert_eq!(response.status().as_u16(), 206);
-//
-//     let login_response: serde_json::Value = response
-//         .json()
-//         .await
-//         .expect("Could not deserialize response body to JSON");
-//
-//     let first_login_attempt_id = login_response["loginAttemptId"]
-//         .as_str()
-//         .expect("loginAttemptId should be a string")
-//         .to_owned();
-//
-//     dbg!("login response:", &login_response);
-//
-//     let first_two_fa_code = login_response["2FACode"]
-//         .as_str()
-//         .expect("2FACode should be a string")
-//         .to_owned();
-//
-//     let response = app.post_login(&login_body).await;
-//     assert_eq!(response.status().as_u16(), 200);
-//
-//     let login_response: serde_json::Value = response
-//         .json()
-//         .await
-//         .expect("Could not deserialize response body to JSON");
-//
-//     let _second_login_attempt_id = login_response["loginAttemptId"]
-//         .as_str()
-//         .expect("loginAttemptId should be a string")
-//         .to_owned();
-//
-//     let _second_two_fa_code = login_response["2FACode"]
-//         .as_str()
-//         .expect("2FACode should be a string")
-//         .to_owned();
-//
-//     let verify_2fa_body = serde_json::json!({
-//         "email": random_email,
-//         "loginAttemptId": first_login_attempt_id,
-//         "2FACode": first_two_fa_code,
-//     });
-//
-//     let response = app.post_verify_2fa(&verify_2fa_body).await;
-//     assert_eq!(response.status().as_u16(), 401);
-//     assert_eq!(
-//         response
-//             .json::<ErrorResponse>()
-//             .await
-//             .expect("Could not deserialize response body to ErrorResponse")
-//             .error,
-//         "Incorrect credentials".to_owned()
-//     );
-// }
 
 #[tokio::test]
 async fn should_return_401_if_old_code() {

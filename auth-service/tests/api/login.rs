@@ -1,9 +1,6 @@
 use crate::helpers::{get_random_email, TestApp};
 use auth_service::{
-    domain::{Email, TwoFACodeStore},
-    routes::TwoFactorAuthResponse,
-    utils::constants::JWT_COOKIE_NAME,
-    ErrorResponse,
+    domain::Email, routes::TwoFactorAuthResponse, utils::constants::JWT_COOKIE_NAME, ErrorResponse,
 };
 
 // Tokio's test macro is used to run the test in an async environment
