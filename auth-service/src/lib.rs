@@ -4,20 +4,19 @@ use axum::{
     response::{IntoResponse, Response},
     routing::post,
     serve::Serve,
-    Json,
-    Router,
+    Json, Router,
 };
-use tower_http::{cors::CorsLayer, services::ServeDir};
-use std::error::Error;
 use serde::{Deserialize, Serialize};
+use std::error::Error;
+use tower_http::{cors::CorsLayer, services::ServeDir};
 
-pub mod routes;
 pub mod domain;
+pub mod routes;
 pub mod services;
 pub mod utils;
 
-use routes::{signup, login, logout, verify_2fa, verify_token};
 use domain::{AppState, AuthAPIError};
+use routes::{login, logout, signup, verify_2fa, verify_token};
 
 // This struct encapsulates our application-related logic.
 pub struct Application {
@@ -40,12 +39,8 @@ impl Application {
             .allow_methods([Method::GET, Method::POST])
             // Allow cookies to be sent
             .allow_credentials(true)
-            // Allow the specified originsy
+            // Allow the specified origins
             .allow_origin(allowed_origins);
-
-            // .allow_headers(vec![header::CONTENT_TYPE, header::AUTHORIZATION])
-            // .max_age(std::time::Duration::from_secs(3600));
-
 
         let router = Router::new()
             .nest_service("/", ServeDir::new("assets"))
@@ -75,7 +70,8 @@ async fn options_handler() -> impl IntoResponse {
     Response::builder()
         .status(200)
         .header(header::ALLOW, "POST, OPTIONS")
-        .body(Body::empty()) .unwrap()
+        .body(Body::empty())
+        .unwrap()
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -89,12 +85,18 @@ impl IntoResponse for AuthAPIError {
             AuthAPIError::UserAlreadyExists => (StatusCode::CONFLICT, "User already exists"),
             AuthAPIError::UserNotFound => (StatusCode::NOT_FOUND, "User not found"),
             AuthAPIError::InvalidCredentials => (StatusCode::BAD_REQUEST, "Invalid credentials"),
-            AuthAPIError::IncorrectCredentials => (StatusCode::UNAUTHORIZED, "Incorrect credentials"),
+            AuthAPIError::IncorrectCredentials => {
+                (StatusCode::UNAUTHORIZED, "Incorrect credentials")
+            }
             AuthAPIError::InvalidToken => (StatusCode::UNAUTHORIZED, "Invalid auth token"),
             AuthAPIError::MissingToken => (StatusCode::BAD_REQUEST, "Missing auth token"),
-            AuthAPIError::UnexpectedError => (StatusCode::INTERNAL_SERVER_ERROR, "Unexpected error"),
+            AuthAPIError::UnexpectedError => {
+                (StatusCode::INTERNAL_SERVER_ERROR, "Unexpected error")
+            }
             AuthAPIError::TokenAlreadyBanned => (StatusCode::CONFLICT, "Token already banned"),
-            AuthAPIError::TokenBanFailed => (StatusCode::UNPROCESSABLE_ENTITY, "Failed to ban token"),
+            AuthAPIError::TokenBanFailed => {
+                (StatusCode::UNPROCESSABLE_ENTITY, "Failed to ban token")
+            }
         };
         let body = Json(ErrorResponse {
             error: error_message.to_string(),

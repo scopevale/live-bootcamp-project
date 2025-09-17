@@ -7,10 +7,16 @@ lazy_static! {
     pub static ref JWT_SECRET: String = set_token();
 }
 
-
 fn set_token() -> String {
     dotenv().ok(); // Load environment variables
-    let secret = std_env::var(env::JWT_SECRET_ENV_VAR).expect("JWT_SECRET must be set.");
+    let secret = std_env::var(env::JWT_SECRET_ENV_VAR).unwrap_or_else(|_| {
+        // For tests, provide a default test secret
+        if cfg!(test) {
+            "test_secret_key_for_unit_tests_only".to_string()
+        } else {
+            panic!("JWT_SECRET must be set.");
+        }
+    });
     if secret.is_empty() {
         panic!("JWT_SECRET must not be empty.");
     }

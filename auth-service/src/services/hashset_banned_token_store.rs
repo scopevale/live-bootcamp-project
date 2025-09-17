@@ -2,7 +2,7 @@ use std::collections::HashSet;
 
 use crate::domain::{BannedTokenStore, BannedTokenStoreError};
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct HashsetBannedTokenStore {
     banned_tokens: HashSet<String>,
 }

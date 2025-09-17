@@ -1,5 +1,7 @@
-use auth_service::{utils::constants::JWT_COOKIE_NAME, ErrorResponse};
 use crate::helpers::{get_random_email, TestApp};
+use auth_service::{
+    domain::Email, routes::TwoFactorAuthResponse, utils::constants::JWT_COOKIE_NAME, ErrorResponse,
+};
 
 // Tokio's test macro is used to run the test in an async environment
 #[tokio::test]
@@ -8,13 +10,14 @@ async fn should_return_422_if_malformed_credentials() {
 
     let random_email = get_random_email(); // Call helper method to generate email
 
-    let expected_error_message = "error decoding response body: expected value at line 1 column 1".to_owned();
+    let expected_error_message =
+        "error decoding response body: expected value at line 1 column 1".to_owned();
 
     let test_bodies = [
         serde_json::json!({             // no password field
             "email": random_email,
         }),
-         serde_json::json!({             // no email field
+        serde_json::json!({             // no email field
             "password": "password123",
         }),
     ];
@@ -29,9 +32,7 @@ async fn should_return_422_if_malformed_credentials() {
             body
         );
 
-        let req_response = response
-            .json::<ErrorResponse>()
-            .await;
+        let req_response = response.json::<ErrorResponse>().await;
 
         assert_eq!(
             req_response.err().unwrap().to_string(),
@@ -80,7 +81,7 @@ async fn should_return_400_if_invalid_input() {
             "Failed for input: {:?}",
             body
         );
-       assert_eq!(
+        assert_eq!(
             response
                 .json::<ErrorResponse>()
                 .await
@@ -121,7 +122,7 @@ async fn should_return_401_if_incorrect_password() {
             "Failed for input: {:?}",
             body
         );
-       assert_eq!(
+        assert_eq!(
             response
                 .json::<ErrorResponse>()
                 .await
@@ -147,12 +148,10 @@ async fn should_return_404_if_incorrect_username() {
     let response = app.post_signup(&user).await;
     assert_eq!(response.status().as_u16(), 201);
 
-    let test_bodies = [
-        serde_json::json!({             // valid but incorrect email
-            "email": "me@example.com",
-            "password": "password123",
-        }),
-    ];
+    let test_bodies = [serde_json::json!({             // valid but incorrect email
+        "email": "me@example.com",
+        "password": "password123",
+    })];
 
     for body in test_bodies.iter() {
         let response = app.post_login(&body).await;
@@ -162,7 +161,7 @@ async fn should_return_404_if_incorrect_username() {
             "Failed for input: {:?}",
             body
         );
-       assert_eq!(
+        assert_eq!(
             response
                 .json::<ErrorResponse>()
                 .await
@@ -203,31 +202,44 @@ async fn should_return_200_if_valid_credentials_and_2fa_disabled() {
 
     assert!(!auth_cookie.value().is_empty());
 }
-// #[tokio::test]
-// async fn should_login_successfully_with_valid_credentials() {
-//     let app = TestApp::new().await;
-//     let random_email = get_random_email(); // Call helper method to generate email
-//     // add a new user to test against
-//     let user = serde_json::json!({
-//         "email": random_email,
-//         "password": "password123",
-//         "requires2FA": false,
-//     });
-//     let response = app.post_signup(&user).await;
-//     assert_eq!(response.status().as_u16(), 201);
-//     // now try to login with the same credentials
-//     let login_request = serde_json::json!({
-//         "email": random_email,
-//         "password": "password123",
-//     });
-//     let response = app.post_login(&login_request).await;
-//     assert_eq!(response.status().as_u16(), 200);
-//     let expected_response = LoginResponse {
-//         message: format!("User {} logged in successfully", random_email),
-//     };
-//     let response_body = response
-//         .json::<LoginResponse>()
-//         .await
-//         .expect("Could not deserialize response body to LoginResponse");
-//     assert_eq!(response_body, expected_response);
-// }
+
+#[tokio::test]
+async fn should_return_206_if_valid_credentials_and_2fa_enabled() {
+    let app = TestApp::new().await;
+    let random_email = get_random_email();
+
+    let signup_body = serde_json::json!({
+        "email": random_email,
+        "password": "password123",
+        "requires2FA": true
+    });
+
+    let response = app.post_signup(&signup_body).await;
+    assert_eq!(response.status().as_u16(), 201);
+
+    let login_body = serde_json::json!({
+        "email": random_email,
+        "password": "password123",
+    });
+
+    let response = app.post_login(&login_body).await;
+    assert_eq!(response.status().as_u16(), 206);
+
+    let json_body = response
+        .json::<TwoFactorAuthResponse>()
+        .await
+        .expect("Could not deserialize response body to TwoFactorAuthResponse");
+
+    assert!(!json_body.login_attempt_id.is_empty());
+    assert_eq!(json_body.message, "2FA required".to_owned());
+
+    // assert that 'json_body.login_attempt_id' is stored in the TwoFA code store
+    let two_fa_code_store = app.two_fa_code_store.read().await;
+
+    let code_tuple = two_fa_code_store
+        .get_code(&Email::parse(random_email).unwrap())
+        .await
+        .expect("Failed to get 2FA code");
+
+    assert_eq!(code_tuple.0.as_ref(), json_body.login_attempt_id);
+}
