@@ -9,16 +9,11 @@ use crate::helpers::{get_random_email, TestApp};
 async fn should_return_400_if_invalid_input() {
     let app = TestApp::new().await;
     let random_email = get_random_email(); // Call helper method to generate email
-    let login_attempt_id = LoginAttemptId::default();
-    let two_fa_code = TwoFACode::default();
-    let expected_error_message = "Incorrect credentials".to_owned();
+    let login_attempt_id = LoginAttemptId::default().as_ref().to_owned();
+    let two_fa_code = TwoFACode::default().as_ref().to_owned();
+    let expected_error_message = "Invalid credentials".to_owned();
 
     let test_bodies = [
-        // serde_json::json!({
-        //     "email": random_email,
-        //     "loginAttemptId": login_attempt_id,
-        //     "2FACode": two_fa_code,
-        // }),
         serde_json::json!({
             "email": "invalid-email-format",
             "loginAttemptId": login_attempt_id,
@@ -44,10 +39,12 @@ async fn should_return_400_if_invalid_input() {
             "Failed for input: {:?}",
             body
         );
-        let req_response = response.json::<ErrorResponse>().await;
-        dbg!("Response error: {:?}", &req_response);
         assert_eq!(
-            req_response.err().unwrap().to_string(),
+            response
+                .json::<ErrorResponse>()
+                .await
+                .expect("Could not deserialize response body to ErrorResponse")
+                .error,
             expected_error_message
         );
     }
