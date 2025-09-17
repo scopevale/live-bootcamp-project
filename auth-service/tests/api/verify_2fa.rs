@@ -5,15 +5,37 @@ use crate::helpers::{get_random_email, TestApp};
 #[tokio::test]
 async fn should_return_422_if_malformed_input() {
     let app = TestApp::new().await;
+    let random_email = get_random_email(); // Call helper method to generate email
+    let login_attempt_id = LoginAttemptId::default();
     let expected_error_message =
         "error decoding response body: expected value at line 1 column 1".to_owned();
 
     let test_bodies = [
-        serde_json::json!({             // no code field
-            "loginAttemptId": LoginAttemptId::default(),
+        serde_json::json!({
+            "loginAttemptId": login_attempt_id,
         }),
-        serde_json::json!({             // no loginAttemptId field
-            "code": "123456",
+        serde_json::json!({
+            "2FACode": "123456",
+        }),
+        serde_json::json!({
+            "email": random_email,
+        }),
+        serde_json::json!({
+            "loginAttemptId": login_attempt_id,
+            "2FACode": "123456",
+        }),
+        serde_json::json!({
+            "loginAttemptId": login_attempt_id,
+            "email": random_email,
+        }),
+        serde_json::json!({
+            "2FACode": "123456",
+            "email": random_email,
+        }),
+        serde_json::json!({
+            "bogusField": "bogusValue",
+        }),
+        serde_json::json!({ // empty body
         }),
     ];
 
