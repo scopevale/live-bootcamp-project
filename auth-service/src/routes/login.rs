@@ -1,7 +1,6 @@
 use crate::{
-    domain::{
-        AppState, AuthAPIError, Email, LoginAttemptId, Password, TwoFACode, User, UserStoreError,
-    },
+    domain::{AppState, AuthAPIError, Email, Password, User},
+    services::data_stores::{LoginAttemptId, TwoFACode, UserStoreError},
     utils::auth::generate_auth_cookie,
 };
 use axum::{extract::State, http::StatusCode, Json};

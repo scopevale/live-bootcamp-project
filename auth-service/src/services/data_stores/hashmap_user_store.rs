@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
-use crate::domain::{Email, Password, User, UserStore, UserStoreError};
+use crate::domain::{Email, Password, User};
+use crate::services::{UserStore, UserStoreError};
 
 // Create a new struct called `HashmapUserStore` containing a `users` field
 // which stores a `HashMap` of `Email` String's mapped to `User` objects.

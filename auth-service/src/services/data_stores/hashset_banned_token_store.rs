@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use crate::domain::{BannedTokenStore, BannedTokenStoreError};
+use crate::services::data_stores::{BannedTokenStore, BannedTokenStoreError};
 
 #[derive(Default, Debug)]
 pub struct HashsetBannedTokenStore {
@@ -27,10 +27,10 @@ mod tests {
     async fn test_ban_token() {
         let mut store = HashsetBannedTokenStore::default();
         let token = "test_token_123".to_string();
-        
+
         let result = store.ban_token(token.clone()).await;
         assert_eq!(result, Ok(()));
-        
+
         // Verify the token was actually stored
         assert!(store.banned_tokens.contains(&token));
     }
@@ -40,14 +40,14 @@ mod tests {
         let mut store = HashsetBannedTokenStore::default();
         let banned_token = "banned_token_456".to_string();
         let clean_token = "clean_token_789";
-        
+
         // Ban a token
         store.banned_tokens.insert(banned_token.clone());
-        
+
         // Check banned token
         let result = store.is_token_banned(&banned_token).await;
         assert_eq!(result, Ok(true));
-        
+
         // Check clean token
         let result = store.is_token_banned(clean_token).await;
         assert_eq!(result, Ok(false));
@@ -61,19 +61,19 @@ mod tests {
             "token2".to_string(),
             "token3".to_string(),
         ];
-        
+
         // Ban multiple tokens
         for token in &tokens {
             let result = store.ban_token(token.clone()).await;
             assert_eq!(result, Ok(()));
         }
-        
+
         // Verify all tokens are banned
         for token in &tokens {
             let result = store.is_token_banned(token).await;
             assert_eq!(result, Ok(true));
         }
-        
+
         // Verify clean token is not banned
         let clean_token = "clean_token";
         let result = store.is_token_banned(clean_token).await;
@@ -84,14 +84,14 @@ mod tests {
     async fn test_ban_duplicate_token() {
         let mut store = HashsetBannedTokenStore::default();
         let token = "duplicate_token".to_string();
-        
+
         // Ban token twice
         let result1 = store.ban_token(token.clone()).await;
         let result2 = store.ban_token(token.clone()).await;
-        
+
         assert_eq!(result1, Ok(()));
         assert_eq!(result2, Ok(()));
-        
+
         // Should still be banned only once (HashSet behavior)
         assert_eq!(store.banned_tokens.len(), 1);
         let result = store.is_token_banned(&token).await;

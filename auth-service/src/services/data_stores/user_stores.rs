@@ -1,4 +1,4 @@
-use super::{Email, Password, User};
+use crate::domain::{Email, Password, User};
 
 #[async_trait::async_trait]
 pub trait UserStore: std::fmt::Debug {
