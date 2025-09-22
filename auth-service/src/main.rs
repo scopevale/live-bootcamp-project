@@ -3,7 +3,9 @@ use tokio::sync::RwLock;
 
 use auth_service::{
     domain::AppState,
-    services::{HashmapTwoFACodeStore, HashmapUserStore, HashsetBannedTokenStore, MockEmailClient},
+    services::{
+        HashmapTwoFACodeStore, HashsetBannedTokenStore, MockEmailClient, PostgresUserStore,
+    },
     utils::constants::{prod, DATABASE_URL},
     Application,
 };
@@ -12,7 +14,7 @@ use auth_service::{
 async fn main() {
     let pg_pool = configure_postgresql().await;
 
-    let user_store = Arc::new(RwLock::new(HashmapUserStore::default()));
+    let user_store = Arc::new(RwLock::new(PostgresUserStore::new(pg_pool)));
     let banned_token_store = Arc::new(RwLock::new(HashsetBannedTokenStore::default()));
     let two_fa_code_store = Arc::new(RwLock::new(HashmapTwoFACodeStore::default()));
 

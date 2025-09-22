@@ -25,7 +25,7 @@ impl PostgresUserStore {
 
 #[async_trait::async_trait]
 impl UserStore for PostgresUserStore {
-    // TODO: Implement all required methods. Note that you will need to make SQL queries against
+    // Implement all required methods. Note that you will need to make SQL queries against
     // our PostgreSQL instance inside these methods.
     async fn add_user(&mut self, user: User) -> Result<(), UserStoreError> {
         let password_hash = compute_password_hash(user.password.as_ref().to_owned())
