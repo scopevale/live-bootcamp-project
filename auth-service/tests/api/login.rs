@@ -6,7 +6,7 @@ use auth_service::{
 // Tokio's test macro is used to run the test in an async environment
 #[tokio::test]
 async fn should_return_422_if_malformed_credentials() {
-    let app = TestApp::new().await;
+    let mut app = TestApp::new().await;
 
     let random_email = get_random_email(); // Call helper method to generate email
 
@@ -39,11 +39,13 @@ async fn should_return_422_if_malformed_credentials() {
             expected_error_message
         );
     }
+
+    TestApp::cleanup(&mut app).await;
 }
 
 #[tokio::test]
 async fn should_return_400_if_invalid_input() {
-    let app = TestApp::new().await;
+    let mut app = TestApp::new().await;
 
     let random_email = get_random_email(); // Call helper method to generate email
 
@@ -90,11 +92,13 @@ async fn should_return_400_if_invalid_input() {
             "Invalid credentials".to_owned()
         );
     }
+
+    TestApp::cleanup(&mut app).await;
 }
 
 #[tokio::test]
 async fn should_return_401_if_incorrect_password() {
-    let app = TestApp::new().await;
+    let mut app = TestApp::new().await;
     let random_email = get_random_email(); // Call helper method to generate email
 
     // add a new user to test against
@@ -131,11 +135,13 @@ async fn should_return_401_if_incorrect_password() {
             "Incorrect credentials".to_owned()
         );
     }
+
+    TestApp::cleanup(&mut app).await;
 }
 
 #[tokio::test]
 async fn should_return_404_if_incorrect_username() {
-    let app = TestApp::new().await;
+    let mut app = TestApp::new().await;
     let random_email = get_random_email(); // Call helper method to generate email
 
     // add a new user to test against
@@ -170,11 +176,13 @@ async fn should_return_404_if_incorrect_username() {
             "User not found".to_owned()
         );
     }
+
+    TestApp::cleanup(&mut app).await;
 }
 
 #[tokio::test]
 async fn should_return_200_if_valid_credentials_and_2fa_disabled() {
-    let app = TestApp::new().await;
+    let mut app = TestApp::new().await;
 
     let random_email = get_random_email();
 
@@ -201,11 +209,13 @@ async fn should_return_200_if_valid_credentials_and_2fa_disabled() {
         .expect("No auth cookie found");
 
     assert!(!auth_cookie.value().is_empty());
+
+    TestApp::cleanup(&mut app).await;
 }
 
 #[tokio::test]
 async fn should_return_206_if_valid_credentials_and_2fa_enabled() {
-    let app = TestApp::new().await;
+    let mut app = TestApp::new().await;
     let random_email = get_random_email();
 
     let signup_body = serde_json::json!({
@@ -236,10 +246,13 @@ async fn should_return_206_if_valid_credentials_and_2fa_enabled() {
     // assert that 'json_body.login_attempt_id' is stored in the TwoFA code store
     let two_fa_code_store = app.two_fa_code_store.read().await;
 
-    let code_tuple = two_fa_code_store
+    let code_tuple = &two_fa_code_store
         .get_code(&Email::parse(random_email).unwrap())
         .await
         .expect("Failed to get 2FA code");
 
     assert_eq!(code_tuple.0.as_ref(), json_body.login_attempt_id);
+    drop(two_fa_code_store); // could also use scope to drop by wrapping above 8 lines in {}
+
+    TestApp::cleanup(&mut app).await;
 }

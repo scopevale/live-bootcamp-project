@@ -5,7 +5,7 @@ use crate::helpers::{get_random_email, TestApp};
 
 #[tokio::test]
 async fn should_return_200_if_valid_jwt_cookie() {
-    let app = TestApp::new().await;
+    let mut app = TestApp::new().await;
 
     let random_email = get_random_email();
 
@@ -50,11 +50,14 @@ async fn should_return_200_if_valid_jwt_cookie() {
     let is_banned = banned_token_store.is_token_banned(token).await.is_ok();
 
     assert!(is_banned);
+    drop(banned_token_store);
+
+    TestApp::cleanup(&mut app).await;
 }
 
 #[tokio::test]
 async fn should_return_400_if_logout_called_twice_in_a_row() {
-    let app = TestApp::new().await;
+    let mut app = TestApp::new().await;
 
     let random_email = get_random_email();
 
@@ -92,12 +95,18 @@ async fn should_return_400_if_logout_called_twice_in_a_row() {
     let status = response.status().as_u16();
     assert_eq!(status, 400);
 
-    let body: ErrorResponse = response.json().await.expect("Failed to parse response body");
+    let body: ErrorResponse = response
+        .json()
+        .await
+        .expect("Failed to parse response body");
     assert_eq!(body.error, "Missing auth token");
+
+    TestApp::cleanup(&mut app).await;
 }
+
 #[tokio::test]
 async fn should_return_400_if_jwt_cookie_missing() {
-    let app = TestApp::new().await;
+    let mut app = TestApp::new().await;
 
     let response = app.post_logout().await;
 
@@ -110,13 +119,18 @@ async fn should_return_400_if_jwt_cookie_missing() {
 
     assert!(auth_cookie.is_none());
 
-    let body: ErrorResponse = response.json().await.expect("Failed to parse response body");
+    let body: ErrorResponse = response
+        .json()
+        .await
+        .expect("Failed to parse response body");
     assert_eq!(body.error, "Missing auth token");
+
+    TestApp::cleanup(&mut app).await;
 }
 
 #[tokio::test]
 async fn should_return_401_if_invalid_token() {
-    let app = TestApp::new().await;
+    let mut app = TestApp::new().await;
 
     // add invalid cookie
     app.cookie_jar.add_cookie_str(
@@ -132,6 +146,11 @@ async fn should_return_401_if_invalid_token() {
     let status = response.status().as_u16();
     assert_eq!(status, 401);
 
-    let body: ErrorResponse = response.json().await.expect("Failed to parse response body");
+    let body: ErrorResponse = response
+        .json()
+        .await
+        .expect("Failed to parse response body");
     assert_eq!(body.error, "Invalid auth token");
+
+    TestApp::cleanup(&mut app).await;
 }
