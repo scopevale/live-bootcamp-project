@@ -3,10 +3,11 @@ use tokio::sync::RwLock;
 
 use auth_service::{
     domain::AppState,
+    get_redis_client,
     services::{
         HashmapTwoFACodeStore, HashsetBannedTokenStore, MockEmailClient, PostgresUserStore,
     },
-    utils::constants::{prod, DATABASE_URL},
+    utils::constants::{prod, DATABASE_URL, REDIS_HOST_NAME},
     Application,
 };
 
@@ -46,4 +47,11 @@ async fn configure_postgresql() -> sqlx::PgPool {
         .await
         .expect("Failed to migrate the database");
     pg_pool
+}
+
+fn configure_redis() -> redis::Connection {
+    get_redis_client(REDIS_HOST_NAME.to_owned())
+        .expect("Failed to get Redis client")
+        .get_connection()
+        .expect("Failed to get Redis connection")
 }
