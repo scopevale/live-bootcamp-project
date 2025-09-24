@@ -3,10 +3,9 @@ use tokio::sync::RwLock;
 
 use auth_service::{
     domain::AppState,
+    // get_postgres_pool,
     get_redis_client,
-    services::{
-        HashmapTwoFACodeStore, HashsetBannedTokenStore, MockEmailClient, PostgresUserStore,
-    },
+    services::{MockEmailClient, PostgresUserStore, RedisBannedTokenStore, RedisTwoFACodeStore},
     utils::constants::{prod, DATABASE_URL, REDIS_HOST_NAME},
     Application,
 };
@@ -14,10 +13,13 @@ use auth_service::{
 #[tokio::main]
 async fn main() {
     let pg_pool = configure_postgresql().await;
+    let redis_connection = Arc::new(RwLock::new(configure_redis()));
 
     let user_store = Arc::new(RwLock::new(PostgresUserStore::new(pg_pool)));
-    let banned_token_store = Arc::new(RwLock::new(HashsetBannedTokenStore::default()));
-    let two_fa_code_store = Arc::new(RwLock::new(HashmapTwoFACodeStore::default()));
+    let banned_token_store = Arc::new(RwLock::new(RedisBannedTokenStore::new(
+        redis_connection.clone(),
+    )));
+    let two_fa_code_store = Arc::new(RwLock::new(RedisTwoFACodeStore::new(redis_connection)));
 
     let email_client = Arc::new(MockEmailClient);
 
@@ -37,6 +39,9 @@ async fn main() {
 
 async fn configure_postgresql() -> sqlx::PgPool {
     // Create Postgres connection pool
+    // let pg_pool = get_postgres_pool(&DATABASE_URL)
+
+    // get_postgres_pool() is not working, so using sqlx::PgPool::connect directly
     let pg_pool = sqlx::PgPool::connect(&DATABASE_URL)
         .await
         .expect("Failed to create Postgres connection pool!");
@@ -46,6 +51,7 @@ async fn configure_postgresql() -> sqlx::PgPool {
         .run(&pg_pool)
         .await
         .expect("Failed to migrate the database");
+
     pg_pool
 }
 

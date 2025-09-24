@@ -39,7 +39,7 @@ fn set_dburl() -> String {
 fn set_redis_host() -> String {
     dotenv().ok(); // Load environment variables
     let redis_host =
-        std_env::var("REDIS_HOST_NAME_ENV_VAR").unwrap_or(DEFAULT_REDIS_HOSTNAME.to_owned());
+        std_env::var(env::REDIS_HOST_NAME_ENV_VAR).unwrap_or(DEFAULT_REDIS_HOSTNAME.to_owned());
     if redis_host.is_empty() {
         panic!("REDIS_HOST_NAME must not be empty.");
     }
