@@ -1,7 +1,8 @@
 #!/bin/bash
 
 # Define the location of the .env file (change if needed)
-ENV_FILE="./auth-service/.env"
+# ENV_FILE="./auth-service/.env"
+ENV_FILE="./.env"
 
 # Check if the .env file exists
 if ! [[ -f "$ENV_FILE" ]]; then
@@ -17,6 +18,7 @@ while IFS= read -r line; do
     key=$(echo "$line" | cut -d '=' -f1)
     value=$(echo "$line" | cut -d '=' -f2-)
     # Export the variable
+    echo "$key: $value"
     export "$key=$value"
   fi
 done < <(grep -v '^#' "$ENV_FILE")

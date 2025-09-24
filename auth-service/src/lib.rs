@@ -109,6 +109,7 @@ impl IntoResponse for AuthAPIError {
 
 pub async fn get_postgres_pool(url: &str) -> Result<PgPool, sqlx::Error> {
     // Create a new PostgreSQL connection pool
+    dbg!(url);
     PgPoolOptions::new().max_connections(5).connect(url).await
 }
 
