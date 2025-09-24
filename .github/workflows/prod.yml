@@ -7,9 +7,31 @@ on:
       - main
   workflow_dispatch:
 
+env:
+  SQLX_OFFLINE: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
+
+    # Service containers to eun with the `test` container job
+    services:
+      # Label used to access the service container
+      postgres:
+        # Docker hub image
+        image: postgres:17.6-alpine
+        # Environment variables scoped only for the `postgres` element
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          POSTGRES_DB: postgres
+        # map ports - Github uses the --publish command to expose the container's ports to Docker host
+        ports:
+          - 5432:5432
+      redis:
+        image: redis:7.0-alpine
+        ports:
+          - 6379:6379
 
     steps:
       # Checkout code from the repository
@@ -41,6 +63,7 @@ jobs:
       working-directory: ./auth-service
       run: |
         export JWT_SECRET=secret
+        export DATABASE_URL=postgres://postgres:${{ secrets.POSTGRES_PASSWORD }}@localhost:5432
         cargo build --verbose
         cargo test --verbose
 
@@ -95,6 +118,7 @@ jobs:
           cd ~
           export JWT_SECRET=${{ secrets.JWT_SECRET }}
           export AUTH_SERVICE_IP=${{ vars.DROPLET_IP }}
+          export POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
           docker compose down
           docker compose pull
           docker compose up -d

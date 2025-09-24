@@ -3,7 +3,8 @@ use axum_extra::extract::CookieJar;
 use serde::Deserialize;
 
 use crate::{
-    domain::{AppState, AuthAPIError, Email, LoginAttemptId, TwoFACode},
+    domain::{AppState, AuthAPIError, Email},
+    services::{LoginAttemptId, TwoFACode},
     utils::auth::generate_auth_cookie,
 };
 

@@ -1,7 +1,6 @@
 use crate::{
-    domain::{
-        AppState, AuthAPIError, Email, LoginAttemptId, Password, TwoFACode, User, UserStoreError,
-    },
+    domain::{AppState, AuthAPIError, Email, Password, User},
+    services::data_stores::{LoginAttemptId, TwoFACode, UserStoreError},
     utils::auth::generate_auth_cookie,
 };
 use axum::{extract::State, http::StatusCode, Json};
@@ -35,9 +34,9 @@ pub async fn login(
         .await
         .map_err(|_| AuthAPIError::IncorrectCredentials)?;
 
-    if !user.verify_password(&password) {
-        return Err(AuthAPIError::IncorrectCredentials);
-    }
+    // if !user.verify_password(&password) {
+    //     return Err(AuthAPIError::IncorrectCredentials);
+    // }
 
     // Handle request based on user's 2FA configuration
     match user.requires_2fa {

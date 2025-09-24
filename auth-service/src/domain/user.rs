@@ -11,14 +11,14 @@ pub struct User {
 
 impl User {
     pub fn new(email: Email, password: Password, requires_2fa: bool) -> Self {
-      Self {
-          email,
-          password,
-          requires_2fa,
-      }
+        Self {
+            email,
+            password,
+            requires_2fa,
+        }
     }
 
-    pub(crate) fn verify_password(&self, password: &Password) -> bool {
-        self.password.verify(password.as_str())
-    }
+    // pub(crate) fn verify_password(&self, password: &Password) -> bool {
+    //     self.password.verify(password.as_str())
+    // }
 }
