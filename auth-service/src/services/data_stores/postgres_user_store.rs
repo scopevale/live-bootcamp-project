@@ -27,6 +27,8 @@ impl PostgresUserStore {
 impl UserStore for PostgresUserStore {
     // Implement all required methods. Note that you will need to make SQL queries against
     // our PostgreSQL instance inside these methods.
+
+    #[tracing::instrument(name = "Adding user to PostgreSQL", skip_all)]
     async fn add_user(&mut self, user: User) -> Result<(), UserStoreError> {
         let password_hash = compute_password_hash(user.password.as_ref().to_owned())
             .await
@@ -50,6 +52,7 @@ impl UserStore for PostgresUserStore {
         }
     }
 
+    #[tracing::instrument(name = "Retrieving user from PostgreSQL", skip_all)]
     async fn get_user(&self, email: &Email) -> Result<User, UserStoreError> {
         sqlx::query!(
             r#"SELECT email, password_hash, requires_2fa FROM users WHERE email = $1"#,
@@ -69,6 +72,7 @@ impl UserStore for PostgresUserStore {
         .ok_or(UserStoreError::UserNotFound)?
     }
 
+    #[tracing::instrument(name = "Validating user credentials in PostgreSQL", skip_all)]
     async fn validate_user(
         &self,
         email: &Email,
@@ -90,6 +94,7 @@ impl UserStore for PostgresUserStore {
 // other async tasks, update this function to perform hashing on a
 // separate thread pool using tokio::task::spawn_blocking. Note that you
 // will need to update the input parameters to be String types instead of &str
+#[tracing::instrument(name = "Verify password hash", skip_all)]
 async fn verify_password_hash(
     expected_password_hash: String,
     password_candidate: String,
@@ -111,6 +116,7 @@ async fn verify_password_hash(
 // other async tasks, update this function to perform hashing on a
 // separate thread pool using tokio::task::spawn_blocking. Note that you
 // will need to update the input parameters to be String types instead of &str
+#[tracing::instrument(name = "Computing password hash", skip_all)]
 async fn compute_password_hash(password: String) -> Result<String, Box<dyn Error + Send + Sync>> {
     let result = tokio::task::spawn_blocking(move || {
         let mut rng = OsRng;
