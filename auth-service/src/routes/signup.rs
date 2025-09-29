@@ -4,7 +4,7 @@ use tracing::instrument;
 
 use crate::domain::{AppState, AuthAPIError, Email, Password, User};
 
-#[instrument(name = "Signup", skip_all, err(Debug))]
+#[instrument(name = "Signup", skip_all)]
 pub async fn signup(
     State(state): State<AppState>,
     Json(request): Json<SignupRequest>,

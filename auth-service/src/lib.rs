@@ -93,6 +93,7 @@ pub struct ErrorResponse {
 
 impl IntoResponse for AuthAPIError {
     fn into_response(self) -> Response {
+        log_error_chain(&self);
         let (status, error_message) = match self {
             AuthAPIError::UserAlreadyExists => (StatusCode::CONFLICT, "User already exists"),
             AuthAPIError::UserNotFound => (StatusCode::NOT_FOUND, "User not found"),
@@ -115,6 +116,24 @@ impl IntoResponse for AuthAPIError {
         });
         (status, body).into_response()
     }
+}
+
+fn log_error_chain(e: &(dyn std::error::Error + 'static)) {
+    let separator =
+        "\n-----------------------------------------------------------------------------------\n";
+
+    // Use Display `{}` instead of Debug `{:?}` so ESC bytes aren't escaped as `\\x1b`
+    let mut report = format!("{separator}{e}\n");
+
+    let mut current = e.source();
+    while let Some(cause) = current {
+        let str = format!("Caused by:{}\n\n", cause);
+        report = format!("{}\n{}", report, str);
+        current = cause.source();
+    }
+
+    report = format!("{}\n{}", report, separator);
+    tracing::error!("{}", report);
 }
 
 pub async fn get_postgres_pool(url: &str) -> Result<PgPool, sqlx::Error> {

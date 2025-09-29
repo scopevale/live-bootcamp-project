@@ -139,7 +139,6 @@ async fn compute_password_hash(password: String) -> Result<String> {
             .to_string();
 
             Ok(password_hash)
-            // Err(eyre!("Oh noes!"))
         })
     })
     .await;
