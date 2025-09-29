@@ -2,8 +2,10 @@ use axum_extra::extract::cookie::{Cookie, SameSite};
 use chrono::Utc;
 use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Validation};
 use serde::{Deserialize, Serialize};
+use thiserror::Error;
 
 use crate::domain::{BannedTokenStoreType, Email};
+use crate::services::data_stores::ErrReport;
 
 use super::constants::{JWT_COOKIE_NAME, JWT_SECRET};
 
@@ -27,10 +29,25 @@ fn create_auth_cookie(token: String) -> Cookie<'static> {
     cookie
 }
 
-#[derive(Debug)]
+#[derive(Debug, Error)]
 pub enum GenerateTokenError {
     TokenError(jsonwebtoken::errors::Error),
     UnexpectedError,
+}
+
+impl std::fmt::Display for GenerateTokenError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            GenerateTokenError::TokenError(err) => write!(f, "Token error: {}", err),
+            GenerateTokenError::UnexpectedError => write!(f, "Unexpected error"),
+        }
+    }
+}
+
+impl From<ErrReport> for GenerateTokenError {
+    fn from(_err: ErrReport) -> Self {
+        GenerateTokenError::UnexpectedError
+    }
 }
 
 // This value determines how long the JWT auth token is valid for
@@ -62,10 +79,16 @@ fn generate_auth_token(email: &Email) -> Result<String, GenerateTokenError> {
 // Check if JWT auth token is valid by decoding it using the JWT secret
 pub async fn validate_token(
     token: &str,
-    banned_token_store: BannedTokenStoreType
+    banned_token_store: BannedTokenStoreType,
 ) -> Result<Claims, jsonwebtoken::errors::Error> {
     // Check if the token is in the banned token store
-    if banned_token_store.read().await.is_token_banned(token).await.unwrap_or(false) {
+    if banned_token_store
+        .read()
+        .await
+        .is_token_banned(token)
+        .await
+        .unwrap_or(false)
+    {
         return Err(jsonwebtoken::errors::Error::from(
             jsonwebtoken::errors::ErrorKind::InvalidToken,
         ));
@@ -151,9 +174,7 @@ mod tests {
     #[tokio::test]
     async fn test_validate_token_with_invalid_token() {
         let token = "invalid_token".to_owned();
-        let banned_token_store = Arc::new(RwLock::new(
-            HashsetBannedTokenStore::default(),
-        ));
+        let banned_token_store = Arc::new(RwLock::new(HashsetBannedTokenStore::default()));
         let result = validate_token(&token, banned_token_store).await;
         assert!(result.is_err());
     }
@@ -169,4 +190,3 @@ mod tests {
         assert!(result.is_err());
     }
 }
-

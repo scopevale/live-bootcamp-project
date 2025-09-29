@@ -1,4 +1,6 @@
 use crate::domain::{Email, Password, User};
+use color_eyre::Report;
+use thiserror::Error;
 
 #[async_trait::async_trait]
 pub trait UserStore: std::fmt::Debug {
@@ -8,13 +10,45 @@ pub trait UserStore: std::fmt::Debug {
         -> Result<(), UserStoreError>;
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Error)]
 pub enum UserStoreError {
+    #[error("User already exists")]
     UserAlreadyExists,
+    #[error("User not found")]
     UserNotFound,
+    #[error("Invalid credentials")]
     InvalidCredentials,
+    #[error("Incorrect credentials")]
     IncorrectCredentials,
-    UnexpectedError,
+    #[error("Unexpected error")]
+    UnexpectedError(#[source] Report),
+}
+
+pub type ErrReport = color_eyre::Report; // or `eyre::Report`
+
+impl From<ErrReport> for UserStoreError {
+    fn from(err: ErrReport) -> Self {
+        UserStoreError::UnexpectedError(err)
+    }
+}
+
+impl From<String> for UserStoreError {
+    fn from(err: String) -> Self {
+        UserStoreError::UnexpectedError(Report::msg(err))
+    }
+}
+
+impl PartialEq for UserStoreError {
+    fn eq(&self, other: &Self) -> bool {
+        matches!(
+            (self, other),
+            (Self::UserAlreadyExists, Self::UserAlreadyExists)
+                | (Self::UserNotFound, Self::UserNotFound)
+                | (Self::InvalidCredentials, Self::InvalidCredentials)
+                | (Self::IncorrectCredentials, Self::IncorrectCredentials)
+                | (Self::UnexpectedError(_), Self::UnexpectedError(_))
+        )
+    }
 }
 
 #[async_trait::async_trait]
@@ -44,10 +78,47 @@ pub trait TwoFACodeStore: std::fmt::Debug {
     ) -> Result<(LoginAttemptId, TwoFACode), TwoFACodeStoreError>;
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Error)]
 pub enum TwoFACodeStoreError {
+    #[error("Login attempt ID not found")]
     LoginAttemptIdNotFound,
-    UnexpectedError,
+    #[error("2FA code not found")]
+    TwoFACodeNotFound,
+    #[error("Unexpected error")]
+    UnexpectedError(#[source] Report),
+}
+
+impl From<ErrReport> for TwoFACodeStoreError {
+    fn from(err: ErrReport) -> Self {
+        TwoFACodeStoreError::UnexpectedError(err)
+    }
+}
+
+impl From<String> for TwoFACodeStoreError {
+    fn from(err: String) -> Self {
+        TwoFACodeStoreError::UnexpectedError(Report::msg(err))
+    }
+}
+
+impl From<TwoFACodeStoreError> for String {
+    fn from(err: TwoFACodeStoreError) -> Self {
+        match err {
+            TwoFACodeStoreError::LoginAttemptIdNotFound => "Login attempt ID not found".to_owned(),
+            TwoFACodeStoreError::TwoFACodeNotFound => "2FA code not found".to_owned(),
+            TwoFACodeStoreError::UnexpectedError(e) => format!("Unexpected error: {}", e),
+        }
+    }
+}
+
+impl PartialEq for TwoFACodeStoreError {
+    fn eq(&self, other: &Self) -> bool {
+        matches!(
+            (self, other),
+            (Self::LoginAttemptIdNotFound, Self::LoginAttemptIdNotFound)
+                | (Self::TwoFACodeNotFound, Self::TwoFACodeNotFound)
+                | (Self::UnexpectedError(_), Self::UnexpectedError(_))
+        )
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, serde::Serialize)]

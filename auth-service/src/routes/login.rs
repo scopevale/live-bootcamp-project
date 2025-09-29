@@ -5,6 +5,7 @@ use crate::{
 };
 use axum::{extract::State, http::StatusCode, Json};
 use axum_extra::extract::CookieJar;
+use color_eyre::Report;
 use serde::{Deserialize, Serialize};
 
 #[axum_macros::debug_handler]
@@ -26,7 +27,10 @@ pub async fn login(
         .map_err(|e| match e {
             UserStoreError::UserNotFound => AuthAPIError::UserNotFound,
             UserStoreError::IncorrectCredentials => AuthAPIError::IncorrectCredentials,
-            _ => AuthAPIError::UnexpectedError,
+            _ => AuthAPIError::UnexpectedError(Report::msg(format!(
+                "Unexpected error during user validation: {:?}",
+                e
+            ))),
         })?; // early-returns Err(AuthAPIError::...)
 
     let user: User = user_store
@@ -63,7 +67,9 @@ async fn handle_2fa(
         .await
         .is_err()
     {
-        return Err(AuthAPIError::UnexpectedError);
+        return Err(AuthAPIError::UnexpectedError(Report::msg(
+            "Unexpected error generating 2FA code".to_owned(),
+        )));
     }
 
     if state
@@ -72,7 +78,10 @@ async fn handle_2fa(
         .await
         .is_err()
     {
-        return Err(AuthAPIError::UnexpectedError);
+        return Err(AuthAPIError::UnexpectedError(Report::msg(format!(
+            "Unexpected error sending 2FA code email to {}",
+            &email,
+        ))));
     }
 
     let response = Json(LoginResponse::TwoFactorAuth(TwoFactorAuthResponse {
@@ -90,7 +99,11 @@ async fn handle_no_2fa(
 ) -> Result<(CookieJar, (StatusCode, Json<LoginResponse>)), AuthAPIError> {
     let auth_cookie = match generate_auth_cookie(email) {
         Ok(cookie) => cookie,
-        Err(_) => return Err(AuthAPIError::UnexpectedError),
+        Err(_) => {
+            return Err(AuthAPIError::UnexpectedError(Report::msg(
+                "Unexpected error generating auth cookie".to_owned(),
+            )))
+        }
     };
 
     let updated_jar = jar.add(auth_cookie);
