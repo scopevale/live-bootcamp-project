@@ -57,9 +57,25 @@ pub trait BannedTokenStore: std::fmt::Debug {
     async fn is_token_banned(&self, token: &str) -> Result<bool, BannedTokenStoreError>;
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Error)]
 pub enum BannedTokenStoreError {
-    UnexpectedError,
+    #[error("Unexpected error")]
+    UnexpectedError(#[source] Report),
+}
+
+impl From<ErrReport> for BannedTokenStoreError {
+    fn from(err: ErrReport) -> Self {
+        BannedTokenStoreError::UnexpectedError(err)
+    }
+}
+
+impl PartialEq for BannedTokenStoreError {
+    fn eq(&self, other: &Self) -> bool {
+        matches!(
+            (self, other),
+            (Self::UnexpectedError(_), Self::UnexpectedError(_))
+        )
+    }
 }
 
 // This trait represents the interface all concrete 2FA code stores should implement

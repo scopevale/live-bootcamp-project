@@ -7,8 +7,10 @@ use axum::{extract::State, http::StatusCode, Json};
 use axum_extra::extract::CookieJar;
 use color_eyre::eyre::Report;
 use serde::{Deserialize, Serialize};
+use tracing::instrument;
 
 #[axum_macros::debug_handler]
+#[instrument(name = "Login", skip_all)]
 pub async fn login(
     State(state): State<AppState>,
     jar: CookieJar,
@@ -50,6 +52,7 @@ pub async fn login(
 }
 
 // New!
+#[instrument(name = "Handle 2fa", skip_all)]
 async fn handle_2fa(
     email: &Email,
     state: &AppState,
@@ -85,6 +88,7 @@ async fn handle_2fa(
     Ok((jar, (StatusCode::PARTIAL_CONTENT, response)))
 }
 
+#[instrument(name = "Handle no 2fa", skip_all)]
 async fn handle_no_2fa(
     email: &Email,
     jar: CookieJar,
@@ -92,7 +96,7 @@ async fn handle_no_2fa(
     let auth_cookie = match generate_auth_cookie(email) {
         Ok(cookie) => cookie,
         Err(e) => {
-            return Err(AuthAPIError::UnexpectedError(e.into()));
+            return Err(AuthAPIError::UnexpectedError(e));
         }
     };
 

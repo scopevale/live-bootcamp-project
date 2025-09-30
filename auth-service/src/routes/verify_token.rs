@@ -1,10 +1,13 @@
-use axum::{
-    extract::State, http::StatusCode, Json
-};
+use axum::{extract::State, http::StatusCode, Json};
 use serde::Deserialize;
+use tracing::instrument;
 
-use crate::{domain::{AppState, AuthAPIError}, utils::auth::validate_token};
+use crate::{
+    domain::{AppState, AuthAPIError},
+    utils::auth::validate_token,
+};
 
+#[instrument(name = "Verify Token", skip_all)]
 pub async fn verify_token(
     State(state): State<AppState>,
     Json(request): Json<VerifyTokenRequest>,

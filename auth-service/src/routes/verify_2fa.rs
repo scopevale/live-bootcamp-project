@@ -1,6 +1,7 @@
 use axum::{extract::State, response::IntoResponse, Json};
 use axum_extra::extract::CookieJar;
 use serde::Deserialize;
+use tracing::instrument;
 
 use crate::{
     domain::{AppState, AuthAPIError, Email},
@@ -8,6 +9,7 @@ use crate::{
     utils::auth::generate_auth_cookie,
 };
 
+#[instrument(name = "Verify 2FA", skip_all)]
 pub async fn verify_2fa(
     State(state): State<AppState>,
     jar: CookieJar,
@@ -45,7 +47,7 @@ pub async fn verify_2fa(
 
     let cookie = match generate_auth_cookie(&email) {
         Ok(cookie) => cookie,
-        Err(e) => return (jar, Err(AuthAPIError::UnexpectedError(e.into()))),
+        Err(e) => return (jar, Err(AuthAPIError::UnexpectedError(e))),
     };
 
     let updated_jar = jar.add(cookie);
