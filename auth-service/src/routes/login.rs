@@ -5,7 +5,7 @@ use crate::{
 };
 use axum::{extract::State, http::StatusCode, Json};
 use axum_extra::extract::CookieJar;
-use color_eyre::Report;
+use color_eyre::eyre::Report;
 use serde::{Deserialize, Serialize};
 
 #[axum_macros::debug_handler]
@@ -59,29 +59,22 @@ async fn handle_2fa(
     let login_attempt_id = LoginAttemptId::default();
     let two_fa_code = TwoFACode::default();
 
-    if state
+    if let Err(e) = state
         .two_fa_code_store
         .write()
         .await
         .add_code(email.clone(), login_attempt_id.clone(), two_fa_code.clone())
         .await
-        .is_err()
     {
-        return Err(AuthAPIError::UnexpectedError(Report::msg(
-            "Unexpected error generating 2FA code".to_owned(),
-        )));
+        return Err(AuthAPIError::UnexpectedError(e.into()));
     }
 
-    if state
+    if let Err(e) = state
         .email_client
         .send_email(email, "2FA Code", two_fa_code.as_ref())
         .await
-        .is_err()
     {
-        return Err(AuthAPIError::UnexpectedError(Report::msg(format!(
-            "Unexpected error sending 2FA code email to {}",
-            &email,
-        ))));
+        return Err(AuthAPIError::UnexpectedError(e));
     }
 
     let response = Json(LoginResponse::TwoFactorAuth(TwoFactorAuthResponse {
@@ -92,17 +85,14 @@ async fn handle_2fa(
     Ok((jar, (StatusCode::PARTIAL_CONTENT, response)))
 }
 
-// // New!
 async fn handle_no_2fa(
     email: &Email,
     jar: CookieJar,
 ) -> Result<(CookieJar, (StatusCode, Json<LoginResponse>)), AuthAPIError> {
     let auth_cookie = match generate_auth_cookie(email) {
         Ok(cookie) => cookie,
-        Err(_) => {
-            return Err(AuthAPIError::UnexpectedError(Report::msg(
-                "Unexpected error generating auth cookie".to_owned(),
-            )))
+        Err(e) => {
+            return Err(AuthAPIError::UnexpectedError(e.into()));
         }
     };
 

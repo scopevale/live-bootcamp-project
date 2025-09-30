@@ -1,5 +1,5 @@
 use crate::domain::{Email, Password, User};
-use color_eyre::Report;
+use color_eyre::eyre::{eyre, Context, Report, Result};
 use thiserror::Error;
 
 #[async_trait::async_trait]
@@ -125,12 +125,9 @@ impl PartialEq for TwoFACodeStoreError {
 pub struct LoginAttemptId(String);
 
 impl LoginAttemptId {
-    pub fn parse(id: String) -> Result<Self, String> {
-        // Use the `parse_str` function from the `uuid` crate to ensure `id` is a valid UUID
-        match uuid::Uuid::parse_str(&id) {
-            Ok(_) => Ok(Self(id)),
-            Err(_) => Err("Invalid login attempt id".to_owned()),
-        }
+    pub fn parse(id: String) -> Result<Self> {
+        let parsed_id = uuid::Uuid::parse_str(&id).wrap_err("Invalid login attempt id")?;
+        Ok(Self(parsed_id.to_string()))
     }
 }
 
@@ -152,12 +149,12 @@ impl AsRef<str> for LoginAttemptId {
 pub struct TwoFACode(String);
 
 impl TwoFACode {
-    pub fn parse(code: String) -> Result<Self, String> {
+    pub fn parse(code: String) -> Result<Self> {
         // Ensure `code` is a valid 6-digit code
         if code.len() == 6 && code.chars().all(|c| c.is_ascii_digit()) {
             Ok(Self(code))
         } else {
-            Err("Invalid 2FA code".to_owned())
+            Err(eyre!("Invalid 2FA code"))
         }
     }
 }
