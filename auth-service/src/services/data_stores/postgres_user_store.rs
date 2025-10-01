@@ -36,8 +36,8 @@ impl UserStore for PostgresUserStore {
             .map_err(UserStoreError::UnexpectedError)?;
         let result = sqlx::query!(
             r#"INSERT INTO users (email, password_hash, requires_2fa) VALUES ($1, $2, $3)"#,
-            user.email.as_ref(),
-            &password_hash,
+            user.email.as_ref().expose_secret(),
+            &password_hash.expose_secret(),
             user.requires_2fa
         )
         .execute(&self.pool)
@@ -57,14 +57,14 @@ impl UserStore for PostgresUserStore {
     async fn get_user(&self, email: &Email) -> Result<User, UserStoreError> {
         sqlx::query!(
             r#"SELECT email, password_hash, requires_2fa FROM users WHERE email = $1"#,
-            email.as_ref()
+            email.as_ref().expose_secret()
         )
         .fetch_optional(&self.pool)
         .await
         .map_err(|e| UserStoreError::UnexpectedError(e.into()))?
         .map(|row| {
             Ok(User {
-                email: Email::parse(row.email)
+                email: Email::parse(Secret::new(row.email))
                     .map_err(|e| UserStoreError::UnexpectedError(eyre!(e)))?,
                 password: Password::parse(row.password_hash.into())
                     .map_err(|e| UserStoreError::UnexpectedError(eyre!(e)))?,
@@ -127,7 +127,7 @@ async fn verify_password_hash(
 // separate thread pool using tokio::task::spawn_blocking. Note that you
 // will need to update the input parameters to be String types instead of &str
 #[tracing::instrument(name = "Computing password hash", skip_all)]
-async fn compute_password_hash(password: Secret<String>) -> Result<String> {
+async fn compute_password_hash(password: Secret<String>) -> Result<Secret<String>> {
     let current_span: tracing::Span = tracing::Span::current();
 
     let result = tokio::task::spawn_blocking(move || {
@@ -142,7 +142,7 @@ async fn compute_password_hash(password: Secret<String>) -> Result<String> {
             .hash_password(password.expose_secret().as_bytes(), &salt)?
             .to_string();
 
-            Ok(password_hash)
+            Ok(Secret::new(password_hash))
         })
     })
     .await;

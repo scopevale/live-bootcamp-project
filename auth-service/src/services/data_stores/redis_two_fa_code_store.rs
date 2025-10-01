@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use color_eyre::eyre::Context;
 use redis::{Commands, Connection};
+use secrecy::ExposeSecret;
 use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
 use tracing::instrument;
@@ -33,7 +34,7 @@ impl RedisTwoFACodeStore {
 
 #[async_trait::async_trait]
 impl TwoFACodeStore for RedisTwoFACodeStore {
-    #[instrument(name = "add_two_fa_code", skip(self, email, login_attempt_id, code), fields(email = %email.as_ref()))]
+    #[instrument(name = "add_two_fa_code", skip(self, email, login_attempt_id, code), fields(email = %email.as_ref().expose_secret()))]
     async fn add_code(
         &mut self,
         email: Email,
@@ -61,7 +62,7 @@ impl TwoFACodeStore for RedisTwoFACodeStore {
         Ok(())
     }
 
-    #[instrument(name = "remove_two_fa_code", skip(self, email), fields(email = %email.as_ref()))]
+    #[instrument(name = "remove_two_fa_code", skip(self, email), fields(email = %email.as_ref().expose_secret()))]
     async fn remove_code(&mut self, email: &Email) -> Result<(), TwoFACodeStoreError> {
         let key = get_key(email);
 
@@ -76,7 +77,7 @@ impl TwoFACodeStore for RedisTwoFACodeStore {
         Ok(())
     }
 
-    #[instrument(name = "get_two_fa_code", skip(self, email), fields(email = %email.as_ref()))]
+    #[instrument(name = "get_two_fa_code", skip(self, email), fields(email = %email.as_ref().expose_secret()))]
     async fn get_code(
         &self,
         email: &Email,
@@ -110,5 +111,5 @@ const TWO_FA_CODE_PREFIX: &str = "two_fa_code:";
 
 #[instrument(name = "get_key", skip(email))]
 fn get_key(email: &Email) -> String {
-    format!("{}{}", TWO_FA_CODE_PREFIX, email.as_ref())
+    format!("{}{}", TWO_FA_CODE_PREFIX, email.as_ref().expose_secret())
 }

@@ -17,7 +17,7 @@ pub async fn login(
     Json(request): Json<LoginRequest>,
 ) -> Result<(CookieJar, (StatusCode, Json<LoginResponse>)), AuthAPIError> {
     let email =
-        Email::parse(request.email.clone()).map_err(|_| AuthAPIError::InvalidCredentials)?;
+        Email::parse(request.email.clone().into()).map_err(|_| AuthAPIError::InvalidCredentials)?;
     let password = Password::parse(request.password.clone().into())
         .map_err(|_| AuthAPIError::InvalidCredentials)?;
 

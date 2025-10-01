@@ -194,14 +194,6 @@ impl<'a> TestApp {
 
 impl<'a> Drop for TestApp {
     fn drop(&mut self) {
-        // let db_name = self.db_name.clone();
-        // let cleanup_called = self.cleanup_called;
-        // // Spawn a new async task to run the cleanup
-        // tokio::spawn(async move {
-        //     if !cleanup_called {
-        //         delete_database(&db_name).await;
-        //     }
-        // });
         if !self.cleanup_called {
             panic!("TestApp::clean_up was not called before dropping TestApp");
         }

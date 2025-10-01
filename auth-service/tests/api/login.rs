@@ -2,6 +2,7 @@ use crate::helpers::{get_random_email, TestApp};
 use auth_service::{
     domain::Email, routes::TwoFactorAuthResponse, utils::constants::JWT_COOKIE_NAME, ErrorResponse,
 };
+use secrecy::Secret;
 
 // Tokio's test macro is used to run the test in an async environment
 #[tokio::test]
@@ -247,7 +248,7 @@ async fn should_return_206_if_valid_credentials_and_2fa_enabled() {
     let two_fa_code_store = app.two_fa_code_store.read().await;
 
     let code_tuple = &two_fa_code_store
-        .get_code(&Email::parse(random_email).unwrap())
+        .get_code(&Email::parse(Secret::new(random_email)).unwrap())
         .await
         .expect("Failed to get 2FA code");
 

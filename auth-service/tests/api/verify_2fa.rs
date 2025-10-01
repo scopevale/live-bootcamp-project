@@ -5,6 +5,7 @@ use auth_service::{
     utils::constants::JWT_COOKIE_NAME,
     ErrorResponse,
 };
+use secrecy::Secret;
 
 use crate::helpers::{get_random_email, TestApp};
 
@@ -44,7 +45,7 @@ async fn should_return_200_if_correct_2fa_code() {
         .two_fa_code_store
         .read()
         .await
-        .get_code(&Email::parse(random_email.clone()).unwrap())
+        .get_code(&Email::parse(Secret::new(random_email.clone())).unwrap())
         .await
         .unwrap();
 
@@ -158,7 +159,7 @@ async fn should_return_401_if_incorrect_credentials() {
         .two_fa_code_store
         .read()
         .await
-        .get_code(&Email::parse(random_email.clone()).unwrap())
+        .get_code(&Email::parse(Secret::new(random_email.clone())).unwrap())
         .await
         .unwrap();
 
@@ -258,7 +259,7 @@ async fn should_return_401_if_old_code() {
         .two_fa_code_store
         .read()
         .await
-        .get_code(&Email::parse(random_email.clone()).unwrap())
+        .get_code(&Email::parse(Secret::new(random_email.clone())).unwrap())
         .await
         .unwrap();
 
@@ -324,7 +325,7 @@ async fn should_return_401_if_same_code_twice() {
         .two_fa_code_store
         .read()
         .await
-        .get_code(&Email::parse(random_email.clone()).unwrap())
+        .get_code(&Email::parse(Secret::new(random_email.clone())).unwrap())
         .await
         .unwrap();
 

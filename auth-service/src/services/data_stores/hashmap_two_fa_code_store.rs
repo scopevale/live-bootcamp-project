@@ -42,13 +42,15 @@ impl TwoFACodeStore for HashmapTwoFACodeStore {
 
 #[cfg(test)]
 mod tests {
+    use secrecy::Secret;
+
     use super::*;
     use crate::test_helpers::get_random_email;
 
     #[tokio::test]
     async fn test_add_code() {
         let mut store = HashmapTwoFACodeStore::default();
-        let email = Email::parse(get_random_email()).unwrap();
+        let email = Email::parse(Secret::new(get_random_email())).unwrap();
         let login_attempt_id = LoginAttemptId::default();
         let code = TwoFACode::default();
 
@@ -63,7 +65,7 @@ mod tests {
     #[tokio::test]
     async fn test_add_and_remove_code() {
         let mut store = HashmapTwoFACodeStore::default();
-        let email = Email::parse(get_random_email()).unwrap();
+        let email = Email::parse(Secret::new(get_random_email())).unwrap();
         let login_attempt_id = LoginAttemptId::default();
         let code = TwoFACode::default();
 
@@ -80,7 +82,7 @@ mod tests {
     #[tokio::test]
     async fn test_add_and_get_code() {
         let mut store = HashmapTwoFACodeStore::default();
-        let email = Email::parse(get_random_email()).unwrap();
+        let email = Email::parse(Secret::new(get_random_email())).unwrap();
         let login_attempt_id = LoginAttemptId::default();
         let code = TwoFACode::default();
 
@@ -98,7 +100,7 @@ mod tests {
     #[tokio::test]
     async fn test_get_code() {
         let mut store = HashmapTwoFACodeStore::default();
-        let email = Email::parse(get_random_email()).unwrap();
+        let email = Email::parse(Secret::new(get_random_email())).unwrap();
         let login_attempt_id = LoginAttemptId::default();
         let code = TwoFACode::default();
 
@@ -115,7 +117,7 @@ mod tests {
     #[tokio::test]
     async fn test_get_code_not_found() {
         let store = HashmapTwoFACodeStore::default();
-        let email = Email::parse(get_random_email()).unwrap();
+        let email = Email::parse(Secret::new(get_random_email())).unwrap();
         let result = store.get_code(&email).await;
 
         assert!(result.is_err());

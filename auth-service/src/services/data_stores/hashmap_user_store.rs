@@ -63,6 +63,8 @@ impl UserStore for HashmapUserStore {
 // unit tests for `HashmapUserStore` implementation
 #[cfg(test)]
 mod tests {
+    use secrecy::Secret;
+
     use super::*;
 
     use crate::test_helpers::get_random_email;
@@ -71,7 +73,7 @@ mod tests {
     async fn test_add_user() {
         let mut store = HashmapUserStore::default();
         let user = User {
-            email: Email::parse(get_random_email()).unwrap(),
+            email: Email::parse(Secret::new(get_random_email())).unwrap(),
             password: Password::parse("password123".to_owned().into()).unwrap(),
             requires_2fa: false,
         };
@@ -88,7 +90,7 @@ mod tests {
     #[tokio::test]
     async fn test_get_user() {
         let mut store = HashmapUserStore::default();
-        let email = Email::parse(get_random_email()).unwrap();
+        let email = Email::parse(Secret::new(get_random_email())).unwrap();
         let user = User {
             email: email.clone(),
             password: Password::parse("password123".to_owned().into()).unwrap(),
@@ -102,7 +104,7 @@ mod tests {
 
         // Get non-existing user
         let result = store
-            .get_user(&Email::parse(get_random_email()).unwrap())
+            .get_user(&Email::parse(Secret::new(get_random_email())).unwrap())
             .await;
         assert_eq!(result, Err(UserStoreError::UserNotFound));
     }
@@ -110,7 +112,7 @@ mod tests {
     #[tokio::test]
     async fn test_validate_user() {
         let mut store = HashmapUserStore::default();
-        let email = Email::parse(get_random_email()).unwrap();
+        let email = Email::parse(Secret::new(get_random_email())).unwrap();
         let password = Password::parse("password123".to_owned().into()).unwrap();
         let user = User {
             email: email.clone(),
@@ -132,7 +134,10 @@ mod tests {
 
         // Validate with new, non-existing user
         let result = store
-            .validate_user(&Email::parse(get_random_email()).unwrap(), &password)
+            .validate_user(
+                &Email::parse(Secret::new(get_random_email())).unwrap(),
+                &password,
+            )
             .await;
         assert_eq!(result, Err(UserStoreError::UserNotFound));
     }

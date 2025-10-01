@@ -11,7 +11,7 @@ pub async fn signup(
     Json(request): Json<SignupRequest>,
 ) -> Result<impl IntoResponse, AuthAPIError> {
     let email =
-        Email::parse(request.email.clone()).map_err(|_| AuthAPIError::InvalidCredentials)?;
+        Email::parse(request.email.clone().into()).map_err(|_| AuthAPIError::InvalidCredentials)?;
     let password =
         Password::parse(request.password.clone()).map_err(|_| AuthAPIError::InvalidCredentials)?;
 
@@ -29,7 +29,7 @@ pub async fn signup(
     }
 
     let response = Json(SignupResponse {
-        message: format!("User {} created successfully", email),
+        message: format!("User {:?} created successfully", email),
     });
 
     Ok((StatusCode::CREATED, response))
