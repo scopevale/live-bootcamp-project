@@ -5,6 +5,7 @@ use argon2::{
     PasswordHash, PasswordHasher, PasswordVerifier, Version,
 };
 
+use secrecy::{ExposeSecret, Secret};
 use sqlx::PgPool;
 
 use crate::{
@@ -65,7 +66,7 @@ impl UserStore for PostgresUserStore {
             Ok(User {
                 email: Email::parse(row.email)
                     .map_err(|e| UserStoreError::UnexpectedError(eyre!(e)))?,
-                password: Password::parse(row.password_hash)
+                password: Password::parse(row.password_hash.into())
                     .map_err(|e| UserStoreError::UnexpectedError(eyre!(e)))?,
                 requires_2fa: row.requires_2fa,
             })
@@ -97,18 +98,21 @@ impl UserStore for PostgresUserStore {
 // will need to update the input parameters to be String types instead of &str
 #[tracing::instrument(name = "Verify password hash", skip_all)]
 async fn verify_password_hash(
-    expected_password_hash: String,
-    password_candidate: String,
+    expected_password_hash: Secret<String>,
+    password_candidate: Secret<String>,
 ) -> Result<()> {
     let current_span: tracing::Span = tracing::Span::current();
 
     let result = tokio::task::spawn_blocking(move || {
         current_span.in_scope(|| {
             let expected_password_hash: PasswordHash<'_> =
-                PasswordHash::new(&expected_password_hash)?;
+                PasswordHash::new(expected_password_hash.expose_secret())?;
 
             Argon2::default()
-                .verify_password(password_candidate.as_bytes(), &expected_password_hash)
+                .verify_password(
+                    password_candidate.expose_secret().as_bytes(),
+                    &expected_password_hash,
+                )
                 .wrap_err("failed to verify password hash")
         })
     })
@@ -123,7 +127,7 @@ async fn verify_password_hash(
 // separate thread pool using tokio::task::spawn_blocking. Note that you
 // will need to update the input parameters to be String types instead of &str
 #[tracing::instrument(name = "Computing password hash", skip_all)]
-async fn compute_password_hash(password: String) -> Result<String> {
+async fn compute_password_hash(password: Secret<String>) -> Result<String> {
     let current_span: tracing::Span = tracing::Span::current();
 
     let result = tokio::task::spawn_blocking(move || {
@@ -135,7 +139,7 @@ async fn compute_password_hash(password: String) -> Result<String> {
                 Version::V0x13,
                 Params::new(15000, 2, 1, None)?,
             )
-            .hash_password(password.as_bytes(), &salt)?
+            .hash_password(password.expose_secret().as_bytes(), &salt)?
             .to_string();
 
             Ok(password_hash)

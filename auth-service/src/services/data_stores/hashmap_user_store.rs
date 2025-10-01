@@ -42,18 +42,21 @@ impl UserStore for HashmapUserStore {
     // unit type `()` if the email/password passed in match an existing user, or a `UserStoreError`.
     // Return `UserStoreError::UserNotFound` if the user can not be found.
     // Return `UserStoreError::InvalidCredentials` if the password is incorrect.
-    async fn validate_user(&self, email: &Email, password: &Password)
-        -> Result<(), UserStoreError> {
-          match self.users.get(email) {
-              Some(user) => {
-                  if user.password.eq(password) {
-                      Ok(())
-                  } else {
-                      Err(UserStoreError::IncorrectCredentials)
-                  }
-              }
-              None => Err(UserStoreError::UserNotFound),
-          }
+    async fn validate_user(
+        &self,
+        email: &Email,
+        password: &Password,
+    ) -> Result<(), UserStoreError> {
+        match self.users.get(email) {
+            Some(user) => {
+                if user.password.eq(password) {
+                    Ok(())
+                } else {
+                    Err(UserStoreError::IncorrectCredentials)
+                }
+            }
+            None => Err(UserStoreError::UserNotFound),
+        }
     }
 }
 
@@ -69,7 +72,7 @@ mod tests {
         let mut store = HashmapUserStore::default();
         let user = User {
             email: Email::parse(get_random_email()).unwrap(),
-            password: Password::parse("password123".to_owned()).unwrap(),
+            password: Password::parse("password123".to_owned().into()).unwrap(),
             requires_2fa: false,
         };
 
@@ -88,7 +91,7 @@ mod tests {
         let email = Email::parse(get_random_email()).unwrap();
         let user = User {
             email: email.clone(),
-            password: Password::parse("password123".to_owned()).unwrap(),
+            password: Password::parse("password123".to_owned().into()).unwrap(),
             requires_2fa: false,
         };
 
@@ -98,7 +101,9 @@ mod tests {
         assert_eq!(result, Ok(user.clone()));
 
         // Get non-existing user
-        let result = store.get_user(&Email::parse(get_random_email()).unwrap()).await;
+        let result = store
+            .get_user(&Email::parse(get_random_email()).unwrap())
+            .await;
         assert_eq!(result, Err(UserStoreError::UserNotFound));
     }
 
@@ -106,7 +111,7 @@ mod tests {
     async fn test_validate_user() {
         let mut store = HashmapUserStore::default();
         let email = Email::parse(get_random_email()).unwrap();
-        let password = Password::parse("password123".to_owned()).unwrap();
+        let password = Password::parse("password123".to_owned().into()).unwrap();
         let user = User {
             email: email.clone(),
             password: password.clone(),
@@ -121,16 +126,13 @@ mod tests {
         assert_eq!(result, Ok(()));
 
         // Validate with incorrect password
-        let incorrect_password = Password::parse("wrongpassword".to_owned()).unwrap();
+        let incorrect_password = Password::parse("wrongpassword".to_owned().into()).unwrap();
         let result = store.validate_user(&user.email, &incorrect_password).await;
         assert_eq!(result, Err(UserStoreError::IncorrectCredentials));
 
         // Validate with new, non-existing user
         let result = store
-            .validate_user(
-                &Email::parse(get_random_email()).unwrap(),
-                &password
-            )
+            .validate_user(&Email::parse(get_random_email()).unwrap(), &password)
             .await;
         assert_eq!(result, Err(UserStoreError::UserNotFound));
     }

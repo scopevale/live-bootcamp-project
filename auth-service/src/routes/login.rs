@@ -18,8 +18,8 @@ pub async fn login(
 ) -> Result<(CookieJar, (StatusCode, Json<LoginResponse>)), AuthAPIError> {
     let email =
         Email::parse(request.email.clone()).map_err(|_| AuthAPIError::InvalidCredentials)?;
-    let password =
-        Password::parse(request.password.clone()).map_err(|_| AuthAPIError::InvalidCredentials)?;
+    let password = Password::parse(request.password.clone().into())
+        .map_err(|_| AuthAPIError::InvalidCredentials)?;
 
     let user_store = &state.user_store.read().await;
 
@@ -39,10 +39,6 @@ pub async fn login(
         .get_user(&email)
         .await
         .map_err(|_| AuthAPIError::IncorrectCredentials)?;
-
-    // if !user.verify_password(&password) {
-    //     return Err(AuthAPIError::IncorrectCredentials);
-    // }
 
     // Handle request based on user's 2FA configuration
     match user.requires_2fa {
