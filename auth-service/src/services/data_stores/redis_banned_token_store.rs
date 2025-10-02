@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use color_eyre::eyre::{Result, WrapErr};
 use redis::{Commands, Connection};
+use secrecy::{ExposeSecret, Secret};
 use tokio::sync::RwLock;
 use tracing::instrument;
 
@@ -32,9 +33,9 @@ impl std::fmt::Debug for RedisBannedTokenStore {
 
 #[async_trait::async_trait]
 impl BannedTokenStore for RedisBannedTokenStore {
-    #[instrument(name = "ban_token", skip(self, token), fields(token = %token))]
-    async fn ban_token(&mut self, token: String) -> Result<(), BannedTokenStoreError> {
-        let token_key = get_key(token.as_str());
+    #[instrument(name = "ban_token", skip(self, token), fields(token = %token.expose_secret()))]
+    async fn ban_token(&mut self, token: Secret<String>) -> Result<(), BannedTokenStoreError> {
+        let token_key = get_key(token.expose_secret());
 
         let value = true;
 
@@ -54,9 +55,9 @@ impl BannedTokenStore for RedisBannedTokenStore {
         Ok(())
     }
 
-    #[instrument(name = "is_token_banned", skip(self, token), fields(token = %token))]
-    async fn is_token_banned(&self, token: &str) -> Result<bool, BannedTokenStoreError> {
-        let token_key = get_key(token);
+    #[instrument(name = "ban_token", skip(self, token), fields(token = %token.expose_secret()))]
+    async fn is_token_banned(&self, token: &Secret<String>) -> Result<bool, BannedTokenStoreError> {
+        let token_key = get_key(token.expose_secret());
 
         let is_banned: bool = self
             .conn

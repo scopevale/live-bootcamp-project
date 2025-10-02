@@ -1,5 +1,6 @@
 use crate::domain::{Email, Password, User};
 use color_eyre::eyre::{eyre, Context, Report, Result};
+use secrecy::Secret;
 use thiserror::Error;
 
 #[async_trait::async_trait]
@@ -53,8 +54,8 @@ impl PartialEq for UserStoreError {
 
 #[async_trait::async_trait]
 pub trait BannedTokenStore: std::fmt::Debug {
-    async fn ban_token(&mut self, token: String) -> Result<(), BannedTokenStoreError>;
-    async fn is_token_banned(&self, token: &str) -> Result<bool, BannedTokenStoreError>;
+    async fn ban_token(&mut self, token: Secret<String>) -> Result<(), BannedTokenStoreError>;
+    async fn is_token_banned(&self, token: &Secret<String>) -> Result<bool, BannedTokenStoreError>;
 }
 
 #[derive(Debug, Error)]

@@ -1,4 +1,5 @@
 use axum::{extract::State, http::StatusCode, Json};
+use secrecy::Secret;
 use serde::Deserialize;
 use tracing::instrument;
 
@@ -20,5 +21,5 @@ pub async fn verify_token(
 
 #[derive(Debug, Deserialize)]
 pub struct VerifyTokenRequest {
-    pub token: String,
+    pub token: Secret<String>,
 }

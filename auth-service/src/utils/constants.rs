@@ -1,15 +1,16 @@
 use dotenvy::dotenv;
 use lazy_static::lazy_static;
+use secrecy::Secret;
 use std::env as std_env;
 
 // Define a lazily evaluated static. lazy_static is needed because std_env::var is not a const function.
 lazy_static! {
-    pub static ref JWT_SECRET: String = set_token();
-    pub static ref DATABASE_URL: String = set_dburl();
+    pub static ref JWT_SECRET: Secret<String> = set_token();
+    pub static ref DATABASE_URL: Secret<String> = set_dburl();
     pub static ref REDIS_HOST_NAME: String = set_redis_host();
 }
 
-fn set_token() -> String {
+fn set_token() -> Secret<String> {
     dotenv().ok(); // Load environment variables
     let secret = std_env::var(env::JWT_SECRET_ENV_VAR).unwrap_or_else(|_| {
         // For tests, provide a default test secret
@@ -22,10 +23,10 @@ fn set_token() -> String {
     if secret.is_empty() {
         panic!("JWT_SECRET must not be empty.");
     }
-    secret
+    Secret::new(secret)
 }
 
-fn set_dburl() -> String {
+fn set_dburl() -> Secret<String> {
     dotenv().ok(); // Load environment variables
     let dburl = std_env::var(env::DATABASE_URL_ENV_VAR).unwrap_or_else(|_| {
         panic!("DATABASE_URL must be set.");
@@ -33,7 +34,7 @@ fn set_dburl() -> String {
     if dburl.is_empty() {
         panic!("DATABASE_URL must not be empty.");
     }
-    dburl
+    Secret::new(dburl)
 }
 
 fn set_redis_host() -> String {
