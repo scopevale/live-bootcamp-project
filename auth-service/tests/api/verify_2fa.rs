@@ -5,7 +5,7 @@ use auth_service::{
     utils::constants::JWT_COOKIE_NAME,
     ErrorResponse,
 };
-use secrecy::Secret;
+use secrecy::{ExposeSecret, Secret};
 
 use crate::helpers::{get_random_email, TestApp};
 
@@ -49,7 +49,7 @@ async fn should_return_200_if_correct_2fa_code() {
         .await
         .unwrap();
 
-    let two_fa_code = code_tuple.1.as_ref();
+    let two_fa_code = code_tuple.1.as_ref().expose_secret();
 
     let request_body = serde_json::json!({
         "email": random_email,
@@ -81,17 +81,17 @@ async fn should_return_400_if_invalid_input() {
     let test_bodies = [
         serde_json::json!({
             "email": "invalid-email-format",
-            "loginAttemptId": login_attempt_id,
-            "2FACode": two_fa_code,
+            "loginAttemptId": login_attempt_id.expose_secret(),
+            "2FACode": two_fa_code.expose_secret(),
         }),
         serde_json::json!({
             "email": random_email,
             "loginAttemptId": "invalid-uuid-format",
-            "2FACode": two_fa_code,
+            "2FACode": two_fa_code.expose_secret(),
         }),
         serde_json::json!({
             "email": random_email,
-            "loginAttemptId": login_attempt_id,
+            "loginAttemptId": login_attempt_id.expose_secret(),
             "2FACode": "123", // invalid 2FA code format
         }),
     ];
@@ -175,17 +175,17 @@ async fn should_return_401_if_incorrect_credentials() {
         (
             incorrect_email.as_str(),
             login_attempt_id.as_str(),
-            two_fa_code,
+            two_fa_code.expose_secret().as_str(),
         ),
         (
             random_email.as_str(),
-            incorrect_login_attempt_id.as_str(),
-            two_fa_code,
+            incorrect_login_attempt_id.expose_secret().as_str(),
+            two_fa_code.expose_secret().as_str(),
         ),
         (
             random_email.as_str(),
             login_attempt_id.as_str(),
-            incorrect_two_fa_code.as_ref(),
+            incorrect_two_fa_code.expose_secret().as_str(),
         ),
     ];
 
@@ -276,7 +276,7 @@ async fn should_return_401_if_old_code() {
     let request_body = serde_json::json!({
         "email": random_email,
         "loginAttemptId": login_attempt_id,
-        "2FACode": code
+        "2FACode": code.expose_secret(),
     });
 
     let response = app.post_verify_2fa(&request_body).await;
@@ -334,7 +334,7 @@ async fn should_return_401_if_same_code_twice() {
     let request_body = serde_json::json!({
         "email": random_email,
         "loginAttemptId": login_attempt_id,
-        "2FACode": code
+        "2FACode": code.expose_secret(),
     });
 
     let response = app.post_verify_2fa(&request_body).await;
@@ -366,24 +366,24 @@ async fn should_return_422_if_malformed_input() {
 
     let test_bodies = [
         serde_json::json!({
-            "loginAttemptId": login_attempt_id,
+            "loginAttemptId": login_attempt_id.as_ref().expose_secret(),
         }),
         serde_json::json!({
-            "2FACode": two_fa_code,
+            "2FACode": two_fa_code.as_ref().expose_secret(),
         }),
         serde_json::json!({
             "email": random_email,
         }),
         serde_json::json!({
-            "loginAttemptId": login_attempt_id,
-            "2FACode": two_fa_code,
+            "loginAttemptId": login_attempt_id.as_ref().expose_secret(),
+            "2FACode": two_fa_code.as_ref().expose_secret(),
         }),
         serde_json::json!({
-            "loginAttemptId": login_attempt_id,
+            "loginAttemptId": login_attempt_id.as_ref().expose_secret(),
             "email": random_email,
         }),
         serde_json::json!({
-            "2FACode": two_fa_code,
+            "2FACode": two_fa_code.as_ref().expose_secret(),
             "email": random_email,
         }),
         serde_json::json!({

@@ -2,7 +2,7 @@ use crate::helpers::{get_random_email, TestApp};
 use auth_service::{
     domain::Email, routes::TwoFactorAuthResponse, utils::constants::JWT_COOKIE_NAME, ErrorResponse,
 };
-use secrecy::Secret;
+use secrecy::{ExposeSecret, Secret};
 
 // Tokio's test macro is used to run the test in an async environment
 #[tokio::test]
@@ -252,7 +252,10 @@ async fn should_return_206_if_valid_credentials_and_2fa_enabled() {
         .await
         .expect("Failed to get 2FA code");
 
-    assert_eq!(code_tuple.0.as_ref(), json_body.login_attempt_id);
+    assert_eq!(
+        code_tuple.0.as_ref().expose_secret(),
+        &json_body.login_attempt_id
+    );
     drop(two_fa_code_store); // could also use scope to drop by wrapping above 8 lines in {}
 
     TestApp::cleanup(&mut app).await;

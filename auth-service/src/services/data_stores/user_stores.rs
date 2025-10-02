@@ -1,6 +1,6 @@
 use crate::domain::{Email, Password, User};
 use color_eyre::eyre::{eyre, Context, Report, Result};
-use secrecy::Secret;
+use secrecy::{ExposeSecret, Secret};
 use thiserror::Error;
 
 #[async_trait::async_trait]
@@ -138,41 +138,56 @@ impl PartialEq for TwoFACodeStoreError {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, serde::Serialize)]
-pub struct LoginAttemptId(String);
+#[derive(Debug, Clone)]
+pub struct LoginAttemptId(Secret<String>);
 
 impl LoginAttemptId {
-    pub fn parse(id: String) -> Result<Self> {
-        let parsed_id = uuid::Uuid::parse_str(&id).wrap_err("Invalid login attempt id")?;
-        Ok(Self(parsed_id.to_string()))
+    pub fn parse(id: Secret<String>) -> Result<Self> {
+        let parsed_id =
+            uuid::Uuid::parse_str(id.expose_secret()).wrap_err("Invalid login attempt id")?;
+        Ok(Self(Secret::new(parsed_id.to_string())))
+    }
+}
+
+impl PartialEq for LoginAttemptId {
+    fn eq(&self, other: &Self) -> bool {
+        self.0.expose_secret() == other.0.expose_secret()
     }
 }
 
 impl Default for LoginAttemptId {
     fn default() -> Self {
         // Use the `uuid` crate to generate a random version 4 UUID
-        Self(uuid::Uuid::new_v4().to_string())
+        Self(Secret::new(uuid::Uuid::new_v4().to_string()))
     }
 }
 
 // Implement AsRef<str> for LoginAttemptId
-impl AsRef<str> for LoginAttemptId {
-    fn as_ref(&self) -> &str {
+impl AsRef<Secret<String>> for LoginAttemptId {
+    fn as_ref(&self) -> &Secret<String> {
         &self.0
     }
 }
 
-#[derive(Clone, Debug, PartialEq, serde::Serialize)]
-pub struct TwoFACode(String);
+#[derive(Clone, Debug)]
+pub struct TwoFACode(Secret<String>);
 
 impl TwoFACode {
-    pub fn parse(code: String) -> Result<Self> {
+    pub fn parse(code: Secret<String>) -> Result<Self> {
+        let exposed_code = code.expose_secret().trim().to_string();
+
         // Ensure `code` is a valid 6-digit code
-        if code.len() == 6 && code.chars().all(|c| c.is_ascii_digit()) {
+        if exposed_code.len() == 6 && exposed_code.chars().all(|c| c.is_ascii_digit()) {
             Ok(Self(code))
         } else {
             Err(eyre!("Invalid 2FA code"))
         }
+    }
+}
+
+impl PartialEq for TwoFACode {
+    fn eq(&self, other: &Self) -> bool {
+        self.0.expose_secret() == other.0.expose_secret()
     }
 }
 
@@ -184,13 +199,13 @@ impl Default for TwoFACode {
             .map(|_| rand::random::<u8>() % 10) // Generate a random digit (0-9)
             .map(|digit| char::from(b'0' + digit)) // Convert digit to char
             .collect();
-        Self(code)
+        Self(Secret::new(code))
     }
 }
 
 // Implement AsRef<str> for TwoFACode
-impl AsRef<str> for TwoFACode {
-    fn as_ref(&self) -> &str {
+impl AsRef<Secret<String>> for TwoFACode {
+    fn as_ref(&self) -> &Secret<String> {
         &self.0
     }
 }
