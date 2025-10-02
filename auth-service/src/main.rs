@@ -3,8 +3,7 @@ use tokio::sync::RwLock;
 
 use auth_service::{
     domain::AppState,
-    // get_postgres_pool,
-    get_redis_client,
+    get_postgres_pool, get_redis_client,
     services::{MockEmailClient, PostgresUserStore, RedisBannedTokenStore, RedisTwoFACodeStore},
     utils::{
         constants::{prod, DATABASE_URL, REDIS_HOST_NAME},
@@ -45,10 +44,7 @@ async fn main() {
 
 async fn configure_postgresql() -> sqlx::PgPool {
     // Create Postgres connection pool
-    // let pg_pool = get_postgres_pool(&DATABASE_URL)
-
-    // get_postgres_pool() is not working, so using sqlx::PgPool::connect directly
-    let pg_pool = sqlx::PgPool::connect(&DATABASE_URL)
+    let pg_pool = get_postgres_pool(&DATABASE_URL)
         .await
         .expect("Failed to create Postgres connection pool!");
 
