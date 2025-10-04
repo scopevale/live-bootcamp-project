@@ -7,27 +7,30 @@ use sqlx::{
 use std::str::FromStr;
 use std::sync::Arc;
 use tokio::sync::RwLock;
+use wiremock::MockServer;
 
 use auth_service::{
-    domain::{AppState, BannedTokenStoreType, TwoFACodeStoreType},
+    domain::{AppState, BannedTokenStoreType, Email, TwoFACodeStoreType},
     get_postgres_pool, get_redis_client,
     services::{
-        data_stores::PostgresUserStore, MockEmailClient, RedisBannedTokenStore, RedisTwoFACodeStore,
+        data_stores::PostgresUserStore, postmark_email_client::PostmarkEmailClient,
+        RedisBannedTokenStore, RedisTwoFACodeStore,
     },
     utils::constants::{test, DATABASE_URL, DEFAULT_REDIS_HOSTNAME},
     Application,
 };
 
-use reqwest::cookie::Jar;
+use reqwest::{cookie::Jar, Client};
 use uuid::Uuid;
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct TestApp {
     pub address: String,
     pub cookie_jar: Arc<Jar>,
     pub banned_token_store: BannedTokenStoreType,
     pub two_fa_code_store: TwoFACodeStoreType,
     pub http_client: reqwest::Client,
+    pub email_server: MockServer,
     pub db_name: String,
     pub cleanup_called: bool,
 }
@@ -45,7 +48,10 @@ impl<'a> TestApp {
         )));
         let two_fa_code_store = Arc::new(RwLock::new(RedisTwoFACodeStore::new(redis_connection)));
 
-        let email_client = Arc::new(MockEmailClient);
+        // Set up a mock email server
+        let email_server = MockServer::start().await; // New!
+        let base_url = email_server.uri(); // New!
+        let email_client = Arc::new(configure_postmark_email_client(base_url));
 
         let app_state = AppState::new(
             user_store,
@@ -81,45 +87,11 @@ impl<'a> TestApp {
             banned_token_store,
             two_fa_code_store,
             http_client,
+            email_server,
             db_name,
             cleanup_called: false,
         }
     }
-
-    // TODO: Fix this function to properly return the user ID from the signup response
-    // pub async fn create_user_and_login(&self) -> (reqwest::cookie::Cookie, Uuid) {
-    //     let email = get_random_email();
-    //     let password = "password123";
-    //     let signup_body = serde_json::json!({
-    //         "email": email,
-    //         "password": password
-    //     });
-    //     let signup_response = self.post_signup(&signup_body).await;
-    //     assert_eq!(signup_response.status().as_u16(), 201);
-    //     let login_body = serde_json::json!({
-    //         "email": email,
-    //         "password": password
-    //     });
-    //     let login_response = self.post_login(&login_body).await;
-    //     assert_eq!(login_response.status().as_u16(), 200);
-    //     // Extract the JWT cookie from the cookie jar
-    //     let url = reqwest::Url::parse(&self.address).expect("Failed to parse URL");
-    //     let cookies = self.cookie_jar.cookies(&url).expect("No cookies found.");
-    //     let cookie_str = cookies.to_str().expect("Failed to convert cookies to string.");
-    //     // Find the JWT cookie in the cookie string
-    //     let jwt_cookie = cookie_str
-    //         .split(';')
-    //         .find(|c| c.trim_start().starts_with("jwt="))
-    //         .expect("JWT cookie not found.")
-    //         .trim_start()
-    //         .to_string();
-    //     // Parse the cookie string into a `reqwest::cookie::Cookie`
-    //     let cookie = reqwest::cookie::Cookie::parse(jwt_cookie)
-    //         .expect("Failed to parse JWT cookie.");
-    //     // For simplicity, we'll return a dummy user ID (UUID)
-    //     let user_id = Uuid::new_v4();
-    //     (cookie, user_id)
-    // }
 
     pub async fn get_root(&self) -> reqwest::Response {
         self.http_client
@@ -298,4 +270,17 @@ fn configure_redis() -> redis::Connection {
         .expect("Failed to get Redis client")
         .get_connection()
         .expect("Failed to get Redis connection")
+}
+
+fn configure_postmark_email_client(base_url: String) -> PostmarkEmailClient {
+    let postmark_auth_token = Secret::new("auth_token".to_owned());
+
+    let sender = Email::parse(Secret::new(test::email_client::SENDER.to_owned())).unwrap();
+
+    let http_client = Client::builder()
+        .timeout(test::email_client::TIMEOUT)
+        .build()
+        .expect("Failed to build HTTP client");
+
+    PostmarkEmailClient::new(base_url, sender, postmark_auth_token, http_client)
 }

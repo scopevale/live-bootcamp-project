@@ -82,8 +82,6 @@ impl UserStore for PostgresUserStore {
     ) -> Result<(), UserStoreError> {
         let user = self.get_user(email).await?;
 
-        dbg!(email, password);
-
         verify_password_hash(
             user.password.as_ref().to_owned(),
             password.as_ref().to_owned(),
@@ -104,11 +102,6 @@ async fn verify_password_hash(
     password_candidate: Secret<String>,
 ) -> Result<()> {
     let current_span: tracing::Span = tracing::Span::current();
-
-    dbg!(
-        expected_password_hash.expose_secret(),
-        password_candidate.expose_secret()
-    );
 
     let result = tokio::task::spawn_blocking(move || {
         current_span.in_scope(|| {
