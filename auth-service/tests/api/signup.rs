@@ -1,4 +1,5 @@
-use auth_service::{routes::SignupResponse, ErrorResponse};
+use auth_service::{domain::Email, routes::SignupResponse, ErrorResponse};
+use secrecy::Secret;
 
 use crate::helpers::{get_random_email, TestApp};
 
@@ -63,7 +64,10 @@ async fn should_return_201_if_valid_input() {
     assert_eq!(response.status().as_u16(), 201);
 
     let expected_response = SignupResponse {
-        message: format!("User {} created successfully", random_email),
+        message: format!(
+            "User {:?} created successfully",
+            Email::parse(Secret::new(random_email)).unwrap(), // neccessary as we can't get the exact email string from the response
+        ),
     };
 
     assert_eq!(
