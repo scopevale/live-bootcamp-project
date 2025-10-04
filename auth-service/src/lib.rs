@@ -119,23 +119,37 @@ impl IntoResponse for AuthAPIError {
     }
 }
 
-fn log_error_chain(e: &(dyn std::error::Error + 'static)) {
+fn log_error_chain(e: &(dyn Error + 'static)) {
     let separator =
         "\n-----------------------------------------------------------------------------------\n";
-
-    // Use Display `{}` instead of Debug `{:?}` so ESC bytes aren't escaped as `\\x1b`
-    let mut report = format!("{separator}{e}\n");
-
+    let mut report = format!("{}{:?}\n", separator, e);
     let mut current = e.source();
     while let Some(cause) = current {
-        let str = format!("Caused by:{}\n\n", cause);
+        let str = format!("Caused by:\n\n{:?}", cause);
         report = format!("{}\n{}", report, str);
         current = cause.source();
     }
-
     report = format!("{}\n{}", report, separator);
     tracing::error!("{}", report);
 }
+
+// fn log_error_chain(e: &(dyn std::error::Error + 'static)) {
+//     let separator =
+//         "\n-----------------------------------------------------------------------------------\n";
+//
+//     // Use Display `{}` instead of Debug `{:?}` so ESC bytes aren't escaped as `\\x1b`
+//     let mut report = format!("{separator}{e}\n");
+//
+//     let mut current = e.source();
+//     while let Some(cause) = current {
+//         let str = format!("Caused by:{}\n\n", cause);
+//         report = format!("{}\n{}", report, str);
+//         current = cause.source();
+//     }
+//
+//     report = format!("{}\n{}", report, separator);
+//     tracing::error!("{}", report);
+// }
 
 pub async fn get_postgres_pool(url: &Secret<String>) -> Result<PgPool, sqlx::Error> {
     // Create a new PostgreSQL connection pool

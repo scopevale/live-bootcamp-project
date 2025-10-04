@@ -54,7 +54,7 @@ impl<'a> TestApp {
             email_client,
         );
 
-        println!("App state: {:?}", &app_state);
+        // println!("App state: {:?}", &app_state);
 
         let app = Application::build(app_state, test::APP_ADDRESS)
             .await

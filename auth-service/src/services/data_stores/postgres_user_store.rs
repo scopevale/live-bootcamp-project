@@ -1,4 +1,4 @@
-use color_eyre::eyre::{eyre, Context, Result};
+use color_eyre::eyre::{Context, Result};
 
 use argon2::{
     password_hash::rand_core::OsRng, password_hash::SaltString, Algorithm, Argon2, Params,
@@ -65,9 +65,9 @@ impl UserStore for PostgresUserStore {
         .map(|row| {
             Ok(User {
                 email: Email::parse(Secret::new(row.email))
-                    .map_err(|e| UserStoreError::UnexpectedError(eyre!(e)))?,
-                password: Password::parse(row.password_hash.into())
-                    .map_err(|e| UserStoreError::UnexpectedError(eyre!(e)))?,
+                    .map_err(UserStoreError::UnexpectedError)?,
+                password: Password::parse(Secret::new(row.password_hash))
+                    .map_err(UserStoreError::UnexpectedError)?,
                 requires_2fa: row.requires_2fa,
             })
         })
@@ -81,6 +81,8 @@ impl UserStore for PostgresUserStore {
         password: &Password,
     ) -> Result<(), UserStoreError> {
         let user = self.get_user(email).await?;
+
+        dbg!(email, password);
 
         verify_password_hash(
             user.password.as_ref().to_owned(),
@@ -103,20 +105,35 @@ async fn verify_password_hash(
 ) -> Result<()> {
     let current_span: tracing::Span = tracing::Span::current();
 
+    dbg!(
+        expected_password_hash.expose_secret(),
+        password_candidate.expose_secret()
+    );
+
     let result = tokio::task::spawn_blocking(move || {
         current_span.in_scope(|| {
+            let password_candidate = password_candidate.expose_secret().as_bytes();
+
             let expected_password_hash: PasswordHash<'_> =
                 PasswordHash::new(expected_password_hash.expose_secret())?;
 
+            tracing::debug!(
+                ?expected_password_hash.hash,
+                ?password_candidate,
+                "debugging inside spawn_blocking"
+            );
+
+            tracing::debug!(?expected_password_hash, "parsed expected hash");
+            tracing::debug!(?password_candidate, "password candidate");
+
             Argon2::default()
-                .verify_password(
-                    password_candidate.expose_secret().as_bytes(),
-                    &expected_password_hash,
-                )
+                .verify_password(password_candidate, &expected_password_hash)
                 .wrap_err("failed to verify password hash")
         })
     })
     .await;
+
+    tracing::debug!(?result, "result from spawn_blocking");
 
     result?
 }
